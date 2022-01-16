@@ -1,0 +1,13 @@
+{
+    "name": "jannisrohden/data-collector",
+    "description": "Fetches various data from the EntsoE and other sources and collects them in a database",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "DataCollector\\": "src/"
+        }
+    },
+    "require": {
+        "symfony/dotenv": "^6.0"
+    }
+}
