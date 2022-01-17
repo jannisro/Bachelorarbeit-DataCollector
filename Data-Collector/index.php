@@ -17,13 +17,22 @@ if (isset($_GET['startDate'], $_GET['endDate'])) {
     $startDate = new DateTime($_GET['startDate']);
     $endDate = new DateTime($_GET['endDate']);
 }
+elseif (isset($_GET['history'])) {
+    $firstFetchedDate = (new DatabaseAdapter)->getDb()
+        ->query("SELECT `date` FROM `generation` ORDER BY `date` ASC LIMIT 1")
+        ->fetch_all()[0][0];
+    if (strtotime($firstFetchedDate) > strtotime('2012-01-01')) {
+        $startDate = (new DateTime($firstFetchedDate))->modify('-3 days');
+        $endDate = new DateTime($firstFetchedDate);
+    }
+}
 // Search from last fetched item to today
 else {
-    $startDate = new DateTime(
+    $startDate = (new DateTime(
         (new DatabaseAdapter)->getDb()
             ->query("SELECT `date` FROM `generation` ORDER BY `date` DESC LIMIT 1")
             ->fetch_all()[0][0]
-    );
+    ))->modify('+1 day');
     $endDate = new DateTime();
 }
 

@@ -55,7 +55,7 @@ class EntsoeAdapter extends DatabaseAdapter
     public function __construct()
     {
         parent::__construct();
-        $this->apiUrl = "{$_ENV['ENTSOE_API_URL']}/{$_ENV['ENTSOE_API_TOKEN']}";
+        $this->apiUrl = "{$_ENV['ENTSOE_API_URL']}?securityToken={$_ENV['ENTSOE_API_TOKEN']}";
     }
 
 

@@ -2,15 +2,20 @@
 
 namespace DataCollector\EntsoE;
 
+use Exception;
+
 class Generation extends EntsoeAdapter
 {
+
+    private bool $dryRun;
 
     /**
      * Requests and stores elctricity generation of all countries, identified by PSR type
      * @param \DateTime $date Date for which data should be queried
      */
-    public function actualGenerationPerType(\DateTimeImmutable $date): void
+    public function actualGenerationPerType(\DateTimeImmutable $date, bool $dryRun = false): void
     {
+        $this->dryRun = $dryRun;
         foreach (parent::COUNTRIES as $countryKey => $country) {
             if ($this->isDataNotPresent($countryKey, $date->format('Y-m-d'))) {
                 // Fetch data from yesterday
@@ -21,7 +26,12 @@ class Generation extends EntsoeAdapter
                     'periodStart' => \DateTime::createFromImmutable($date)->modify('-1 day')->format('Ymd2300'),
                     'periodEnd' => $date->format('Ymd2300')
                 ]);
-                $this->storeResultInDatabase($response, $countryKey, $date);
+                if (!is_null($response)) {
+                    $this->storeResultInDatabase($response, $countryKey, $date);
+                }
+                else {
+                    print_r("No valid response received for country $countryKey and date " . $date->format('d.m.Y'));
+                }
             }
         }
     }
@@ -57,7 +67,7 @@ class Generation extends EntsoeAdapter
     private function storeResultInDatabase(\SimpleXMLElement $response, string $countryKey, \DateTimeImmutable $date): void
     {
         // When TimeSeries is present and dry run is deactivated
-        if ($response->TimeSeries && !$_ENV['DRY_RUN']) {
+        if ($response->TimeSeries && $this->dryRun === false) {
             // Add all PSR generation values to the database
             foreach ($this->getAllPsrValues($response) as $psrType => $generationAmount) {
                 $this->insertIntoDb('generation', [
@@ -68,9 +78,10 @@ class Generation extends EntsoeAdapter
                     'created_at' => date('Y-m-d H:i:s')
                 ]);
             }
+            echo "<p>Generation data from " . $date->format('Y-m-d') . " for country '$countryKey' have been inserted into database</p>";
         }
-        elseif ($_ENV['DRY_RUN']) {
-            echo("<p>Generation data from " . $date->format('Y-m-d') . " for country '$countryKey' would have been inserted into database (DryRun is activated)</p>");
+        elseif ($this->dryRun === true) {
+            echo "<p>Generation data from " . $date->format('Y-m-d') . " for country '$countryKey' would have been inserted into database (DryRun is activated)</p>";
         }
     }
 
