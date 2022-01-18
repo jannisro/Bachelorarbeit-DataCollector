@@ -24,14 +24,14 @@ class DatabaseAdapter
     }
 
 
-    protected function insertIntoDb(string $table, array $data): bool
+    protected function insertIntoDb(string $table, array $data, bool $output = false): bool
     {
         foreach ($data as $key => $val) {
             $data[$key] = $this->db->real_escape_string($val);
         }
         $cols = '`' . implode('`, `', array_keys($data)) . '`';
         $values = "'" . implode("', '", array_values($data)) . "'";
-        return $this->db->query("INSERT INTO $table ($cols) VALUES ($values)");
+        return $this->db->query("INSERT INTO `$table` ($cols) VALUES ($values)");
     }
 
 }

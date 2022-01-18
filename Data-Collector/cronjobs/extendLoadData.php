@@ -1,0 +1,26 @@
+<?php
+
+require __DIR__ . '/../vendor/autoload.php';
+
+use DataCollector\DatabaseAdapter;
+use Symfony\Component\Dotenv\Dotenv;
+use DataCollector\EntsoE\Load;
+
+// Parse .env file with configuration
+$dotenv = new Dotenv();
+$dotenv->load(__DIR__ . '/../.env');
+
+// Extend load data
+$firstFetchedDate = (new DatabaseAdapter)->getDb()
+    ->query("SELECT `date` FROM `load` ORDER BY `date` ASC LIMIT 1")
+    ->fetch_all()[0][0];
+if (strtotime($firstFetchedDate) > strtotime('2012-01-01')) {
+    $startDate = (new DateTime($firstFetchedDate))->modify('-8 days');
+    $endDate = new DateTime($firstFetchedDate);
+    $load = new Load;
+    $currentDate = new DateTime($startDate->format('Y-m-d'));
+    while ($currentDate->format('Y-m-d') !== $endDate->format('Y-m-d')) {
+        $load->actualLoad(DateTimeImmutable::createFromMutable($currentDate));
+        $currentDate->modify('+1 day');
+    }
+}

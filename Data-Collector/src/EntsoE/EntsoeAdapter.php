@@ -59,6 +59,11 @@ class EntsoeAdapter extends DatabaseAdapter
     }
 
 
+    /**
+     * Performs get request to the EntsoE API
+     * @param array $params All needed parameters [name=>value]
+     * @return \SimpleXMLElement Parsed XML or null at error
+     */
     protected function makeGetRequest(array $params): ?\SimpleXMLElement
     {
         $url = $this->apiUrl;
@@ -70,6 +75,16 @@ class EntsoeAdapter extends DatabaseAdapter
         $xml = simplexml_load_string(curl_exec($curl));
         curl_close($curl);
         return $xml ? $xml : null;
+    }
+
+
+    /**
+     * Checks whether the datbase already contains data for a given country and date
+     */
+    protected function isDataNotPresent(string $tableName, string $countryKey, string $date): bool
+    {
+        $res = $this->getDb()->query("SELECT * FROM `$tableName` WHERE `country` = '$countryKey' AND `date` = '$date'");
+        return $res && $res->num_rows === 0;
     }
 
 }

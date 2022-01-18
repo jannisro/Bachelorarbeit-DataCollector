@@ -2,8 +2,6 @@
 
 namespace DataCollector\EntsoE;
 
-use Exception;
-
 class Generation extends EntsoeAdapter
 {
 
@@ -11,13 +9,14 @@ class Generation extends EntsoeAdapter
 
     /**
      * Requests and stores elctricity generation of all countries, identified by PSR type
-     * @param \DateTime $date Date for which data should be queried
+     * @param \DateTimeImmutable $date Date for which data should be queried
+     * @param bool $dryRun true=No data is stored and method is run for test purposes
      */
     public function actualGenerationPerType(\DateTimeImmutable $date, bool $dryRun = false): void
     {
         $this->dryRun = $dryRun;
         foreach (parent::COUNTRIES as $countryKey => $country) {
-            if ($this->isDataNotPresent($countryKey, $date->format('Y-m-d'))) {
+            if ($this->isDataNotPresent('generation', $countryKey, $date->format('Y-m-d'))) {
                 // Fetch data from yesterday
                 $response = $this->makeGetRequest([
                     'documentType' => 'A75',
@@ -30,9 +29,31 @@ class Generation extends EntsoeAdapter
                     $this->storeResultInDatabase($response, $countryKey, $date);
                 }
                 else {
-                    print_r("No valid response received for country $countryKey and date " . $date->format('d.m.Y'));
+                    print_r("[Generation] No valid response received for country $countryKey and date " . $date->format('d.m.Y'));
                 }
             }
+        }
+    }
+
+
+    private function storeResultInDatabase(\SimpleXMLElement $response, string $countryKey, \DateTimeImmutable $date): void
+    {
+        // When TimeSeries is present and dry run is deactivated
+        if ($response->TimeSeries && $this->dryRun === false) {
+            // Add all PSR generation values to the database
+            foreach ($this->getAllPsrValues($response) as $psrType => $generationAmount) {
+                $this->insertIntoDb('generation', [
+                    'country' => $countryKey,
+                    'date' => $date->format('Y-m-d'),
+                    'psr_type' => $psrType,
+                    'amount' => $generationAmount,
+                    'created_at' => date('Y-m-d H:i:s')
+                ]);
+            }
+            echo "<p>Generation data from " . $date->format('Y-m-d') . " for country '$countryKey' have been inserted into database</p>";
+        }
+        elseif ($this->dryRun === true) {
+            echo "<p>Generation data from " . $date->format('Y-m-d') . " for country '$countryKey' would have been inserted into database (DryRun is activated)</p>";
         }
     }
 
@@ -61,38 +82,6 @@ class Generation extends EntsoeAdapter
             $seriesIndex++;
         }
         return $result;
-    }
-
-
-    private function storeResultInDatabase(\SimpleXMLElement $response, string $countryKey, \DateTimeImmutable $date): void
-    {
-        // When TimeSeries is present and dry run is deactivated
-        if ($response->TimeSeries && $this->dryRun === false) {
-            // Add all PSR generation values to the database
-            foreach ($this->getAllPsrValues($response) as $psrType => $generationAmount) {
-                $this->insertIntoDb('generation', [
-                    'country' => $countryKey,
-                    'date' => $date->format('Y-m-d'),
-                    'psr_type' => $psrType,
-                    'amount' => $generationAmount,
-                    'created_at' => date('Y-m-d H:i:s')
-                ]);
-            }
-            echo "<p>Generation data from " . $date->format('Y-m-d') . " for country '$countryKey' have been inserted into database</p>";
-        }
-        elseif ($this->dryRun === true) {
-            echo "<p>Generation data from " . $date->format('Y-m-d') . " for country '$countryKey' would have been inserted into database (DryRun is activated)</p>";
-        }
-    }
-
-
-    /**
-     * Checks whether the datbase already contains data for a given country and date
-     */
-    private function isDataNotPresent(string $countryKey, string $date): bool
-    {
-        $res = $this->getDb()->query("SELECT * FROM `generation` WHERE `country` = '$countryKey' AND `date` = '$date'");
-        return $res->num_rows === 0;
     }
 
 }

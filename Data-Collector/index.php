@@ -5,6 +5,7 @@ require __DIR__ . '/vendor/autoload.php';
 use DataCollector\DatabaseAdapter;
 use Symfony\Component\Dotenv\Dotenv;
 use DataCollector\EntsoE\Generation;
+use DataCollector\EntsoE\Load;
 
 // Parse .env file with configuration
 $dotenv = new Dotenv();
@@ -39,12 +40,14 @@ else {
 
 // Instantiate EntsoE classes
 $generation = new Generation;
+$load = new Load;
 
 
 // Collect data between dates
 $currentDate = new DateTime($startDate->format('Y-m-d'));
 while ($currentDate->format('Y-m-d') !== $endDate->format('Y-m-d')) {
     $generation->actualGenerationPerType(DateTimeImmutable::createFromMutable($currentDate));
+    $load->actualLoad(DateTimeImmutable::createFromMutable($currentDate));
 
     $currentDate->modify('+1 day');
     sleep(5); # Wait 5 seconds to prevent overload of API requests
