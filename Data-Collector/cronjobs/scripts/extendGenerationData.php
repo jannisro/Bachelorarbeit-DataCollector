@@ -1,16 +1,12 @@
 <?php
 
-require __DIR__ . '/../vendor/autoload.php';
+/**
+ * Fetch historic data until 2021-01-01
+ * This script should be called by a cronjob multiple times daily
+ */
 
 use DataCollector\DatabaseAdapter;
-use Symfony\Component\Dotenv\Dotenv;
 use DataCollector\EntsoE\Generation;
-use DataCollector\EntsoE\Load;
-
-// Parse .env file with configuration
-$dotenv = new Dotenv();
-$dotenv->load(__DIR__ . '/../.env');
-
 
 // Extend Generation data
 $firstFetchedDate = (new DatabaseAdapter)->getDb()
