@@ -61,6 +61,8 @@ class EntsoeAdapter extends DatabaseAdapter
         'PT' => '10YPT-REN------W',
         'RO' => '10YRO-TEL------P',
         'SE' => '10YSE-1--------K',
+        'DK_1' => '10YDK-1--------W',
+        'DK_2' => '10YDK-2--------M'
     ];
 
 

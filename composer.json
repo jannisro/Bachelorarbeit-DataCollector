@@ -1,5 +1,5 @@
 {
-    "name": "jannisrohden/data-collector",
+    "name": "jannisrohden/bachelorarbeit-data-collector",
     "description": "Fetches various data from the EntsoE and other sources and collects them in a database",
     "type": "project",
     "autoload": {

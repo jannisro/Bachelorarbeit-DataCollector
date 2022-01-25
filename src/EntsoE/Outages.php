@@ -9,6 +9,7 @@ class Outages extends EntsoeAdapter
 {
 
     private bool $dryRun;
+    private string $queryDate;
 
 
     /**
@@ -19,28 +20,34 @@ class Outages extends EntsoeAdapter
     public function load(\DateTimeImmutable $date, bool $dryRun = false): void
     {
         $this->dryRun = $dryRun;
+        $this->queryDate = $date->format('Y-m-d');
         foreach (parent::OUTAGE_ZONES as $countryKey => $country) {
-            //$this->unpackZip(curl_exec($curl), $countryKey, $date);
-            // Fetch data from yesterday
-            $zipFile = $this->makeGetRequestWithZipResponse([
-                'documentType' => 'A80',
-                'businessType' => 'A53',
-                'processType' => 'A16',
-                'biddingZone_Domain' => $country,
-                'periodStart' => \DateTime::createFromImmutable($date)->modify('-1 day')->format('Ymd2300'),
-                'periodEnd' => $date->format('Ymd2300')
-            ]);
-            if (!is_null($zipFile)) {
-                $xmlDirIterator = $this->zipToXml($zipFile);
-                if (!is_null($xmlDirIterator)) {
-                    $this->handleXmlFiles($xmlDirIterator, $countryKey);
-                }
-            }
-            else {
-                print_r("[Outages] No valid response received for country $countryKey and date " . $date->format('d.m.Y'));
-            }
+            // Fetch outages of generation units
+            $this->fetchData($date, $countryKey, $country, 'A80');
+            // Fetch outages of production units
+            $this->fetchData($date, $countryKey, $country, 'A77');
         }
         $this->emptyTmpDir();
+        echo 'Done';
+    }
+
+
+    private function fetchData(\DateTimeImmutable $date, string $countryKey, string $country, string $documentType): void
+    {
+        $zipFile = $this->makeGetRequestWithZipResponse([
+            'documentType' => $documentType,
+            'businessType' => 'A53',
+            'processType' => 'A16',
+            'biddingZone_Domain' => $country,
+            'periodStart' => \DateTime::createFromImmutable($date)->modify('-1 day')->format('Ymd2300'),
+            'periodEnd' => $date->format('Ymd2300')
+        ]);
+        if (!is_null($zipFile)) {
+            $xmlDirIterator = $this->zipToXml($zipFile);
+            if (!is_null($xmlDirIterator)) {
+                $this->handleXmlFiles($xmlDirIterator, $countryKey);
+            }
+        }
     }
 
 
@@ -48,7 +55,7 @@ class Outages extends EntsoeAdapter
     {
         $zip = new \ZipArchive;
         $zip->open($zipFilePath);
-        $folderName = __DIR__ . '/../../tmp/' . mt_rand(1, 9) . time();
+        $folderName = __DIR__ . '/../../tmp/' . mt_rand(100, 999) . time();
         if (mkDir($folderName) && $zip->extractTo($folderName)) {
             return new \DirectoryIterator($folderName);
         }
@@ -81,7 +88,7 @@ class Outages extends EntsoeAdapter
                 'installed_capacity' => $series->{'production_RegisteredResource.pSRType.powerSystemResources.nominalP'}->__toString(),
                 'available_capacity' => $series->Available_Period->Point->quantity->__toString(),
                 'psr_type' => $series->{'production_RegisteredResource.pSRType.psrType'}->__toString(),
-                'reason' => $xml->Reason->text->__toString(),
+                'reason' => $xml->Reason->text->__toString()
             ];
             if (!$this->doesOutageExists($data)) {
                 $this->storeResultInDatabase($data);
@@ -94,8 +101,8 @@ class Outages extends EntsoeAdapter
     {
         if ($this->dryRun === false) {
             $data['created_at'] = date('Y-m-d H:i:s');
+            $data['query_date'] = $this->queryDate;
             $this->insertIntoDb('outages', $data);
-            echo "<p>Outage data for country '{$data['country']}' and unit '{$data['unit_name']}' ({$data['available_capacity']}MW/{$data['installed_capacity']}MW) have been inserted into database</p>";
         }
         elseif ($this->dryRun === true) {
             echo "<p>Outage data for country '{$data['country']}' and unit '{$data['unit_name']}' ({$data['available_capacity']}MW/{$data['installed_capacity']}MW) would have been inserted into database (DryRun)</p>";
@@ -110,9 +117,10 @@ class Outages extends EntsoeAdapter
             WHERE `country` = '{$data['country']}' 
                 AND `unit_name` = '{$data['unit_name']}'
                 AND `start` = '{$data['start']}'
-                AND `end` = '{$data['end']}'"
+                AND `end` = '{$data['end']}'
+                AND `available_capacity` = '{$data['available_capacity']}'"
         );
-        return $res && $res->num_rows === 1;
+        return $res && $res->num_rows > 0;
     }
 
 

@@ -28,11 +28,9 @@ class Generation extends EntsoeAdapter
                 if (!is_null($response)) {
                     $this->storeResultInDatabase($response, $countryKey, $date);
                 }
-                else {
-                    print_r("[Generation] No valid response received for country $countryKey and date " . $date->format('d.m.Y'));
-                }
             }
         }
+        echo 'Done';
     }
 
 
@@ -50,7 +48,6 @@ class Generation extends EntsoeAdapter
                     'created_at' => date('Y-m-d H:i:s')
                 ]);
             }
-            echo "<p>Generation data from " . $date->format('Y-m-d') . " for country '$countryKey' have been inserted into database</p>";
         }
         elseif ($this->dryRun === true) {
             echo "<p>Generation data from " . $date->format('Y-m-d') . " for country '$countryKey' would have been inserted into database (DryRun is activated)</p>";

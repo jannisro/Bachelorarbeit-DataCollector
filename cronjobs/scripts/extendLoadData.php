@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Fetch historic data until 2021-01-01
+ * Fetch historic data until 2016-01-01
  * This script should be called by a cronjob multiple times daily
  */
 
@@ -13,7 +13,7 @@ $firstFetchedDate = (new DatabaseAdapter)->getDb()
     ->query("SELECT `date` FROM `load` ORDER BY `date` ASC LIMIT 1")
     ->fetch_all()[0][0];
 if (strtotime($firstFetchedDate) > strtotime('2016-01-01')) {
-    $startDate = (new DateTime($firstFetchedDate))->modify('-8 days');
+    $startDate = (new DateTime($firstFetchedDate))->modify('-5 days');
     $endDate = new DateTime($firstFetchedDate);
     $load = new Load;
     $currentDate = new DateTime($startDate->format('Y-m-d'));

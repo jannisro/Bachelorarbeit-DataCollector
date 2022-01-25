@@ -31,11 +31,9 @@ class Load extends EntsoeAdapter
                 if (!is_null($response)) {
                     $this->storeResultInDatabase($response, $countryKey, $date);
                 }
-                else {
-                    print_r("[Load] No valid response received for country $countryKey and date " . $date->format('d.m.Y'));
-                }
             }
         }
+        echo 'Done';
     }
 
 
@@ -56,7 +54,6 @@ class Load extends EntsoeAdapter
                 'amount' => $loadSum,
                 'created_at' => date('Y-m-d H:i:s')
             ]);
-            echo "<p>Load data from " . $date->format('Y-m-d') . " for country '$countryKey' ($loadSum MW) have been inserted into database</p>";
         }
         elseif ($this->dryRun === true) {
             echo "<p>Load data from " . $date->format('Y-m-d') . " for country '$countryKey' would have been inserted into database (DryRun is activated)</p>";

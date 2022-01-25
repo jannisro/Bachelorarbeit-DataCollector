@@ -27,11 +27,9 @@ class InstalledCapacities extends EntsoeAdapter
                 if (!is_null($response)) {
                     $this->storeResultInDatabase($response, $countryKey, $date);
                 }
-                else {
-                    print_r("[Installed Capacities] No valid response received for country $countryKey and year " . $date->format('Y'));
-                }
             }
         }
+        echo 'Done';
     }
 
 
@@ -56,7 +54,6 @@ class InstalledCapacities extends EntsoeAdapter
                     'created_at' => date('Y-m-d H:i:s')
                 ]);
             }
-            echo "<p>Capacity data from " . $date->format('Y-m-d') . " for country '$countryKey' have been inserted into database</p>";
         }
         elseif ($this->dryRun === true) {
             echo "<p>Capacity data from " . $date->format('Y-m-d') . " for country '$countryKey' would have been inserted into database (DryRun is activated)</p>";
