@@ -15,7 +15,6 @@ class EntsoeAdapter extends DatabaseAdapter
         'BA' => '10YBA-JPCC-----D',
         'BE' => '10YBE----------2',
         'BG' => '10YCA-BULGARIA-R',
-        'BY' => '10Y1001A1001A51S',
         'CH' => '10YCH-SWISSGRIDZ',
         'CZ' => '10YCZ-CEPS-----N',
         'DE' => '10Y1001A1001A83F',
@@ -24,33 +23,46 @@ class EntsoeAdapter extends DatabaseAdapter
         'ES' => '10YES-REE------0',
         'FI' => '10YFI-1--------U',
         'FR' => '10YFR-RTE------C',
-        'GB' => '10YGB----------A',
-        'GB_NIR' => '10Y1001A1001A016',
         'GR' => '10YGR-HTSO-----Y',
         'HR' => '10YHR-HEP------M',
         'HU' => '10YHU-MAVIR----U',
-        'IE' => '10YIE-1001A00010',
         'IT' => '10YIT-GRTN-----B',
         'LT' => '10YLT-1001A0008Q',
         'LU' => '10YLU-CEGEDEL-NQ',
         'LV' => '10YLV-1001A00074',
         'ME' => '10YCS-CG-TSO---S',
         'MK' => '10YMK-MEPSO----8',
-        'MT' => '10Y1001A1001A93C',
         'NL' => '10YNL----------L',
         'NO' => '10YNO-0--------C',
         'PL' => '10YPL-AREA-----S',
         'PT' => '10YPT-REN------W',
         'RO' => '10YRO-TEL------P',
         'RS' => '10YCS-SERBIATSOV',
-        'RU' => '10Y1001A1001A49F',
-        'RU_KGD' => '10Y1001A1001A50U',
         'SE' => '10YSE-1--------K',
         'SI' => '10YSI-ELES-----O',
-        'SK' => '10YSK-SEPS-----K',
-        'TR' => '10YTR-TEIAS----W',
-        'UA' => '10YUA-WEPS-----0'
+        'SK' => '10YSK-SEPS-----K'
     ];
+
+
+    const OUTAGE_ZONES = [
+        'DE' => '10Y1001A1001A82H',
+        'FR' => '10YFR-RTE------C',
+        'AT' => '10YAT-APG------L',
+        'BE' => '10YBE----------2',
+        'BG' => '10YCA-BULGARIA-R',
+        'CH' => '10YCH-SWISSGRIDZ',
+        'CZ' => '10YCZ-CEPS-----N',
+        'ES' => '10YES-REE------0',
+        'HU' => '10YHU-MAVIR----U',
+        'IT' => '10YIT-GRTN-----B',
+        'NL' => '10YNL----------L',
+        'NO' => '10YNO-0--------C',
+        'PL' => '10YPL-AREA-----S',
+        'PT' => '10YPT-REN------W',
+        'RO' => '10YRO-TEL------P',
+        'SE' => '10YSE-1--------K',
+    ];
+
 
     public function __construct()
     {
@@ -60,7 +72,7 @@ class EntsoeAdapter extends DatabaseAdapter
 
 
     /**
-     * Performs get request to the EntsoE API
+     * Performs GET request to the EntsoE API
      * @param array $params All needed parameters [name=>value]
      * @return \SimpleXMLElement Parsed XML or null at error
      */
@@ -75,6 +87,31 @@ class EntsoeAdapter extends DatabaseAdapter
         $xml = simplexml_load_string(curl_exec($curl));
         curl_close($curl);
         return $xml ? $xml : null;
+    }
+
+
+    /**
+     * Performs GET request to an endpoint with a ZIP file attached to the response
+     * @param array $params All needed parameters [name=>value]
+     * @return string|null Path to the zip file or null at failure
+     */
+    protected function makeGetRequestWithZipResponse(array $params): ?string
+    {
+        $url = $this->apiUrl;
+        foreach ($params as $key => $value) {
+            $url .= "&$key=$value";
+        }
+        if(!is_dir(__DIR__ . '/../../tmp')) {
+            mkdir(__DIR__ . '/../../tmp');
+        }
+        $fileName = __DIR__ . '/../../tmp/' . mt_rand(100, 999) . time() . '.zip';
+        $response = file_get_contents($url);
+        // When response is binary (<=> ZIP returned)
+        if (!preg_match('//u', $response)) {
+            file_put_contents($fileName, $response);
+            return $fileName;
+        }
+        return null;
     }
 
 

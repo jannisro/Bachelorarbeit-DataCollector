@@ -6,19 +6,19 @@
  */
 
 use DataCollector\DatabaseAdapter;
-use DataCollector\EntsoE\Load;
+use DataCollector\EntsoE\Generation;
 
-// Extend load data
+// Extend Generation data
 $firstFetchedDate = (new DatabaseAdapter)->getDb()
-    ->query("SELECT `date` FROM `load` ORDER BY `date` ASC LIMIT 1")
+    ->query("SELECT `date` FROM `generation` ORDER BY `date` ASC LIMIT 1")
     ->fetch_all()[0][0];
-if (strtotime($firstFetchedDate) > strtotime('2012-01-01')) {
-    $startDate = (new DateTime($firstFetchedDate))->modify('-8 days');
+if (strtotime($firstFetchedDate) > strtotime('2016-01-01')) {
+    $startDate = (new DateTime($firstFetchedDate))->modify('-6 days');
     $endDate = new DateTime($firstFetchedDate);
-    $load = new Load;
+    $generation = new Generation;
     $currentDate = new DateTime($startDate->format('Y-m-d'));
     while ($currentDate->format('Y-m-d') !== $endDate->format('Y-m-d')) {
-        $load->actualLoad(DateTimeImmutable::createFromMutable($currentDate));
+        $generation->actualGenerationPerType(DateTimeImmutable::createFromMutable($currentDate));
         $currentDate->modify('+1 day');
     }
 }
