@@ -6,14 +6,14 @@
  */
 
 use DataCollector\DatabaseAdapter;
-use DataCollector\EntsoE\Load;
+use DataCollector\Energy\Load;
 
 // Extend load data
 $firstFetchedDate = (new DatabaseAdapter)->getDb()
     ->query("SELECT `date` FROM `load` ORDER BY `date` ASC LIMIT 1")
     ->fetch_all()[0][0];
 if (strtotime($firstFetchedDate) > strtotime('2016-01-01')) {
-    $startDate = (new DateTime($firstFetchedDate))->modify('-5 days');
+    $startDate = (new DateTime($firstFetchedDate))->modify('-4 days');
     $endDate = new DateTime($firstFetchedDate);
     $load = new Load;
     $currentDate = new DateTime($startDate->format('Y-m-d'));

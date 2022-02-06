@@ -1,10 +1,10 @@
 <?php
 
-namespace DataCollector\EntsoE;
+namespace DataCollector\Energy;
 
 use SimpleXMLElement;
 
-class Load extends EntsoeAdapter
+class Load extends EnergyAdapter
 {
 
     private bool $dryRun;

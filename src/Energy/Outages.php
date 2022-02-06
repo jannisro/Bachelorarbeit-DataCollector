@@ -1,11 +1,11 @@
 <?php
 
-namespace DataCollector\EntsoE;
+namespace DataCollector\Energy;
 
 use DateTime;
 use DateTimeImmutable;
 
-class Outages extends EntsoeAdapter
+class Outages extends EnergyAdapter
 {
 
     private bool $dryRun;

@@ -8,7 +8,7 @@
 require __DIR__ . '/../vendor/autoload.php';
 
 use Symfony\Component\Dotenv\Dotenv;
-use DataCollector\EntsoE\InstalledCapacities;
+use DataCollector\Energy\InstalledCapacities;
 
 
 // Parse .env file with configuration

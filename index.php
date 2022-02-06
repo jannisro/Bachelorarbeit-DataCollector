@@ -4,8 +4,8 @@ require __DIR__ . '/vendor/autoload.php';
 
 use DataCollector\DatabaseAdapter;
 use Symfony\Component\Dotenv\Dotenv;
-use DataCollector\EntsoE\Generation;
-use DataCollector\EntsoE\Load;
+use DataCollector\Energy\Generation;
+use DataCollector\Energy\Load;
 
 // Parse .env file with configuration
 $dotenv = new Dotenv();

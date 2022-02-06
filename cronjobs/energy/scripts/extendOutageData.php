@@ -6,7 +6,7 @@
  */
 
 use DataCollector\DatabaseAdapter;
-use DataCollector\EntsoE\Outages;
+use DataCollector\Energy\Outages;
 
 // Extend load data
 $firstFetchedDate = (new DatabaseAdapter)->getDb()

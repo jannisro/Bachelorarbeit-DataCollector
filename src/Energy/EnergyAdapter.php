@@ -1,10 +1,10 @@
 <?php
 
-namespace DataCollector\EntsoE;
+namespace DataCollector\Energy;
 
 use DataCollector\DatabaseAdapter;
 
-class EntsoeAdapter extends DatabaseAdapter
+class EnergyAdapter extends DatabaseAdapter
 {
 
     protected string $apiUrl;

@@ -1,8 +1,8 @@
 <?php
 
-namespace DataCollector\EntsoE;
+namespace DataCollector\Energy;
 
-class InstalledCapacities extends EntsoeAdapter
+class InstalledCapacities extends EnergyAdapter
 {
 
     private bool $dryRun;

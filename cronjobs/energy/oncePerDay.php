@@ -8,9 +8,9 @@
 require_once __DIR__ . '/../vendor/autoload.php';
 
 use Symfony\Component\Dotenv\Dotenv;
-use DataCollector\EntsoE\Generation;
-use DataCollector\EntsoE\Load;
-use DataCollector\EntsoE\Outages;
+use DataCollector\Energy\Generation;
+use DataCollector\Energy\Load;
+use DataCollector\Energy\Outages;
 
 // Parse .env file with configuration
 $dotenv = new Dotenv();
