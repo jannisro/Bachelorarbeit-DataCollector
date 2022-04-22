@@ -2,7 +2,9 @@
 
 namespace DataCollector\Energy;
 
-class InstalledCapacities extends EnergyAdapter
+use DataCollector\EntsoeAdapter;
+
+class InstalledCapacities extends EntsoEAdapter
 {
 
     private bool $dryRun;

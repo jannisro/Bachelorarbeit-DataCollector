@@ -3,8 +3,9 @@
 namespace DataCollector\Energy;
 
 use SimpleXMLElement;
+use DataCollector\EntsoeAdapter;
 
-class Load extends EnergyAdapter
+class Load extends EntsoEAdapter
 {
 
     private bool $dryRun;

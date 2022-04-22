@@ -1,10 +1,10 @@
 <?php
 
-namespace DataCollector\Energy;
+namespace DataCollector;
 
-use DataCollector\DatabaseAdapter;
+use DateTime;
 
-class EnergyAdapter extends DatabaseAdapter
+class EntsoeAdapter extends DatabaseAdapter
 {
 
     protected string $apiUrl;
@@ -97,7 +97,7 @@ class EnergyAdapter extends DatabaseAdapter
      * @param array $params All needed parameters [name=>value]
      * @return string|null Path to the zip file or null at failure
      */
-    protected function makeGetRequestWithZipResponse(array $params): ?string
+    /*protected function makeGetRequestWithZipResponse(array $params): ?string
     {
         $url = $this->apiUrl;
         foreach ($params as $key => $value) {
@@ -114,7 +114,7 @@ class EnergyAdapter extends DatabaseAdapter
             return $fileName;
         }
         return null;
-    }
+    }*/
 
 
     /**
@@ -122,7 +122,12 @@ class EnergyAdapter extends DatabaseAdapter
      */
     protected function isDataNotPresent(string $tableName, string $countryKey, string $date): bool
     {
-        $res = $this->getDb()->query("SELECT * FROM `$tableName` WHERE `country` = '$countryKey' AND `date` = '$date'");
+        $res = $this->getDb()->query(
+            "SELECT * 
+            FROM `$tableName` 
+            WHERE `country` = '$countryKey' 
+                AND `datetime` LIKE '$date%'"
+        );
         return $res && $res->num_rows === 0;
     }
 

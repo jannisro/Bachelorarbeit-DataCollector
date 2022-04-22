@@ -1,15 +1,15 @@
 <?php
 
-namespace DataCollector\Energy;
+/*namespace DataCollector\Energy;
 
 use DateTime;
 use DateTimeImmutable;
 
-class Outages extends EnergyAdapter
+class Outages extends EntsoEAdapter
 {
 
     private bool $dryRun;
-    private string $queryDate;
+    private string $queryDate;*/
 
 
     /**
@@ -17,7 +17,7 @@ class Outages extends EnergyAdapter
      * @param \DateTimeImmutable $date Date for which data should be queried
      * @param bool $dryRun true=No data is stored and method is run for test purposes
      */
-    public function load(\DateTimeImmutable $date, bool $dryRun = false): void
+    /*public function load(\DateTimeImmutable $date, bool $dryRun = false): void
     {
         $this->dryRun = $dryRun;
         $this->queryDate = $date->format('Y-m-d');
@@ -136,4 +136,4 @@ class Outages extends EnergyAdapter
         }
     }
 
-}
+}*/

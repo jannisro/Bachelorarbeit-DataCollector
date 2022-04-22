@@ -2,7 +2,9 @@
 
 namespace DataCollector\Energy;
 
-class Generation extends EnergyAdapter
+use DataCollector\EntsoEAdapter;
+
+class Generation extends EntsoEAdapter
 {
 
     private bool $dryRun;
@@ -17,13 +19,13 @@ class Generation extends EnergyAdapter
         $this->dryRun = $dryRun;
         foreach (parent::COUNTRIES as $countryKey => $country) {
             if ($this->isDataNotPresent('generation', $countryKey, $date->format('Y-m-d'))) {
-                // Fetch data from yesterday
+                // Fetch data of date
                 $response = $this->makeGetRequest([
                     'documentType' => 'A75',
                     'processType' => 'A16',
                     'in_domain' => $country,
-                    'periodStart' => \DateTime::createFromImmutable($date)->modify('-1 day')->format('Ymd2300'),
-                    'periodEnd' => $date->format('Ymd2300')
+                    'periodStart' => \DateTime::createFromImmutable($date)->modify('-1 day')->format('Ymd2200'),
+                    'periodEnd' => $date->format('Ymd2200')
                 ]);
                 if (!is_null($response)) {
                     $this->storeResultInDatabase($response, $countryKey, $date);
@@ -38,21 +40,77 @@ class Generation extends EnergyAdapter
     {
         // When TimeSeries is present and dry run is deactivated
         if ($response->TimeSeries && $this->dryRun === false) {
-            // Add all PSR generation values to the database
-            foreach ($this->getAllPsrValues($response) as $psrType => $generationAmount) {
-                $this->insertIntoDb('generation', [
-                    'country' => $countryKey,
-                    'date' => $date->format('Y-m-d'),
-                    'psr_type' => $psrType,
-                    'amount' => $generationAmount,
-                    'created_at' => date('Y-m-d H:i:s')
-                ]);
+            // Iterate through hourly values of each PSR and insert them into DB
+            foreach ($this->psrTypesWithHourlyValues($response) as $psrName => $hourlyValues) {
+                foreach ($hourlyValues as $value) {
+                    $this->insertIntoDb('electricity_generation', [
+                        'country' => $countryKey,
+                        'date' => $date->format('Y-m-d'),
+                        'psr_type' => $psrName,
+                        'value' => $value,
+                        'created_at' => date('Y-m-d H:i:s')
+                    ]);
+                }
             }
         }
         elseif ($this->dryRun === true) {
             echo "<p>Generation data from " . $date->format('Y-m-d') . " for country '$countryKey' would have been inserted into database (DryRun is activated)</p>";
         }
     }
+
+
+    /**
+     * Returns hourly values of each PSR type ([psr1 => [hourlyValues], psr2 => [hourlyValues], ...])
+     */
+    private function psrTypesWithHourlyValues(\SimpleXMLElement $xml): array
+    {
+        $result = [];
+        foreach ($this->psrTypesWithRawValues($xml) as $psrName => $rawValues) {
+            // Raw values are hourly => No need for processing
+            if (count($rawValues) === 24) {
+                $result[$psrName] = $rawValues;
+            }
+            // Raw values are quarter hourly => Aggregate to hourly
+            else if (count($rawValues) === 96) {
+                $result[$psrName] = $this->aggregateValues($rawValues, 4);
+            }
+            // Raw values are half hourly => Aggregate to hourly
+            else if (count($rawValues) === 48) {
+                $result[$psrName] = $this->aggregateValues($rawValues, 2);
+            }
+        }
+        return $result;
+    }
+
+
+    /**
+     * Parses XML response to an array of format [psr1 => [values], psr2 => [values]]
+     */
+    private function psrTypesWithRawValues(\SimpleXMLElement $xml): array
+    {
+        $result = [];
+
+        return $result;
+    }
+
+
+    /**
+     * Sums up each n elements in an array
+     */
+    private function aggregateValues(array $values, int $elementsToUnite): array {
+        $result = array_fill(0, 24, 0);
+        $currentIndexInResult = $currentlyUnitedElements = 0;
+        foreach ($values as $value) {
+            $result[$currentIndexInResult] += $value;
+            if (++$currentlyUnitedElements === $elementsToUnite) {
+                ++$currentIndexInResult;
+            }
+        }
+        return $result;
+    }
+
+
+
 
 
     /**
