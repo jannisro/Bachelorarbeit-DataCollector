@@ -10,7 +10,7 @@ class NetPosition extends EntsoEAdapter
     private bool $dryRun;
 
     /**
-     * Requests and stores elctricity generation of all countries, identified by PSR type
+     * Calculates and stores net positions of all countries
      * @param \DateTimeImmutable $date Date for which data should be queried
      * @param bool $dryRun true=No data is stored and method is run for test purposes
      */

@@ -65,6 +65,41 @@ class EntsoeAdapter extends DatabaseAdapter
     ];
 
 
+    const BORDER_RELATIONS = [
+        'AL' => ['GR', 'ME', 'RS'],
+        'AT' => ['CZ', 'DE', 'HU', 'IT', 'SI', 'CH'],
+        'BA' => ['HR', 'ME', 'RS'],
+        'BE' => ['FR', 'DE', 'NL', 'LU'],
+        'BG' => ['GR', 'RO', 'RS'],
+        'CH' => ['AT', 'FR', 'DE', 'IT'],
+        'CZ' => ['AT', 'DE', 'PL', 'SK'],
+        'DE' => ['NL', 'BE', 'FR', 'CH', 'AT', 'CZ', 'PL', 'DK', 'NO', 'SE', 'LU'],
+        'DK' => ['DE', 'NL', 'NO', 'SE'],
+        'EE' => ['FI', 'LV'],
+        'ES' => ['FR', 'PT'],
+        'FI' => ['EE', 'NO', 'SE'],
+        'FR' => ['BE', 'DE', 'IT', 'ES', 'CH'],
+        'GR' => ['AL', 'BG', 'IT'],
+        'HR' => ['BA', 'HU', 'RS', 'SI'],
+        'HU' => ['AT', 'HR', 'RO', 'RS', 'SK'],
+        'IT' => ['AT', 'FR', 'GR', 'ME', 'SI', 'CH'],
+        'LT' => [],
+        'LU' => [],
+        'LV' => [],
+        'ME' => [],
+        'MK' => [],
+        'NL' => [],
+        'NO' => [],
+        'PL' => [],
+        'PT' => [],
+        'RO' => [],
+        'RS' => [],
+        'SE' => [],
+        'SI' => [],
+        'SK' => []
+    ];
+
+
     public function __construct()
     {
         parent::__construct();
