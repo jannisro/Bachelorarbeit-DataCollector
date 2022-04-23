@@ -4,7 +4,7 @@ namespace DataCollector\Energy;
 
 use DataCollector\EntsoEAdapter;
 
-class Load extends EntsoEAdapter
+class ElectricityPrice extends EntsoEAdapter
 {
 
     private bool $dryRun;
@@ -14,16 +14,16 @@ class Load extends EntsoEAdapter
      * @param \DateTimeImmutable $date Date for which data should be queried
      * @param bool $dryRun true=No data is stored and method is run for test purposes
      */
-    public function actualLoad(\DateTimeImmutable $date, bool $dryRun = false): void
+    public function dayAheadPrices(\DateTimeImmutable $date, bool $dryRun = false): void
     {
         $this->dryRun = $dryRun;
-        foreach (parent::COUNTRIES as $countryKey => $country) {
-            if ($this->isDataNotPresent('electricity_load', $countryKey, $date->format('Y-m-d')) || $dryRun) {
+        foreach (parent::BIDDING_ZONES_PRICES as $countryKey => $country) {
+            if ($this->isDataNotPresent('electricity_prices', $countryKey, $date->format('Y-m-d')) || $dryRun) {
                 // Fetch data of date
                 $response = $this->makeGetRequest([
-                    'documentType' => 'A65',
-                    'processType' => 'A16',
-                    'outBiddingZone_Domain' => $country,
+                    'documentType' => 'A44',
+                    'in_Domain' => $country,
+                    'out_Domain' => $country,
                     'periodStart' => \DateTime::createFromImmutable($date)->modify('-1 day')->format('Ymd2200'),
                     'periodEnd' => $date->format('Ymd2200')
                 ]);
@@ -40,10 +40,10 @@ class Load extends EntsoEAdapter
     {
         // When TimeSeries is present and dry run is deactivated
         if ($response->TimeSeries && $this->dryRun === false) {
-            // Iterate through hourly values of each PSR and insert them into DB
+            // Iterate through hourly values and insert them into DB
             foreach ($this->hourlyValues($response) as $hourlyValue) {
                 $time = 0;
-                $this->insertIntoDb('electricity_load', [
+                $this->insertIntoDb('electricity_prices', [
                     'country' => $countryKey,
                     'datetime' => $date->format('Y-m-d') . "$time:00",
                     'value' => $hourlyValue,
@@ -53,11 +53,10 @@ class Load extends EntsoEAdapter
             }
         }
         elseif ($this->dryRun === true) {
-            print_r($this->hourlyValues($response));
-            echo "<p>Load data from " . $date->format('Y-m-d') . " for country '$countryKey' would have been inserted into database (DryRun is activated)</p>";
+            echo "<p>Electricity price data from " . $date->format('Y-m-d') . " for country '$countryKey' would have been inserted into database (DryRun is activated)</p>";
         }
         else {
-            echo "<p>Failed to receive load data for country '$countryKey'</p>";
+            echo "<p>Failed to receive electricity price data for country '$countryKey'</p>";
         }
     }
 
@@ -101,7 +100,7 @@ class Load extends EntsoEAdapter
             // Iiterate over Points in TimeSeries
             $pointIndex = 0;
             while ($point = $series->Period->Point[$pointIndex]) {
-                $result[] = floatval($point->quantity->__toString());
+                $result[] = floatval($point->{'price.amount'}->__toString());
                 $pointIndex++;
             }
             $seriesIndex++;

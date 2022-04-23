@@ -18,7 +18,7 @@ class InstalledCapacities extends EntsoEAdapter
     {
         $this->dryRun = $dryRun;
         foreach (parent::COUNTRIES as $countryKey => $country) {
-            if ($this->isDataNotPresent('installed_capacities', $countryKey, $date->format('Y'))) {
+            if ($this->isDataNotPresent('electricity_installed_capacities', $countryKey, $date->format('Y'))) {
                 $response = $this->makeGetRequest([
                     'documentType' => 'A68',
                     'processType' => 'A33',
@@ -48,11 +48,11 @@ class InstalledCapacities extends EntsoEAdapter
         if ($response->TimeSeries && $this->dryRun === false) {
             // Add all PSR capacity values to the database
             foreach ($this->getAllPsrValues($response) as $psrType => $capacityAmount) {
-                $this->insertIntoDb('installed_capacities', [
+                $this->insertIntoDb('electricity_installed_capacities', [
                     'country' => $countryKey,
                     'year' => $date->format('Y'),
                     'psr_type' => $psrType,
-                    'amount' => $capacityAmount,
+                    'value' => $capacityAmount,
                     'created_at' => date('Y-m-d H:i:s')
                 ]);
             }

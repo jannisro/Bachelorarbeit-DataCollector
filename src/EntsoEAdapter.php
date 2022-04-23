@@ -44,7 +44,7 @@ class EntsoeAdapter extends DatabaseAdapter
     ];
 
 
-    const OUTAGE_ZONES = [
+    const BIDDING_ZONES_PRICES = [
         'DE' => '10Y1001A1001A82H',
         'FR' => '10YFR-RTE------C',
         'AT' => '10YAT-APG------L',
@@ -54,15 +54,14 @@ class EntsoeAdapter extends DatabaseAdapter
         'CZ' => '10YCZ-CEPS-----N',
         'ES' => '10YES-REE------0',
         'HU' => '10YHU-MAVIR----U',
-        'IT' => '10YIT-GRTN-----B',
+        'IT' => '10Y1001A1001A73I',
         'NL' => '10YNL----------L',
-        'NO' => '10YNO-0--------C',
+        'NO' => '10YNO-1--------2',
         'PL' => '10YPL-AREA-----S',
         'PT' => '10YPT-REN------W',
         'RO' => '10YRO-TEL------P',
-        'SE' => '10YSE-1--------K',
-        'DK_1' => '10YDK-1--------W',
-        'DK_2' => '10YDK-2--------M'
+        'SE' => '10Y1001A1001A44P',
+        'DK' => '10YDK-1--------W'
     ];
 
 
@@ -84,6 +83,7 @@ class EntsoeAdapter extends DatabaseAdapter
         foreach ($params as $key => $value) {
             $url .= "&$key=$value";
         }
+        echo "<p>$url</p>";
         $curl = curl_init($url);
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
         $xml = simplexml_load_string(curl_exec($curl));
@@ -129,6 +129,23 @@ class EntsoeAdapter extends DatabaseAdapter
                 AND `datetime` LIKE '$date%'"
         );
         return $res && $res->num_rows === 0;
+    }
+
+
+    /**
+     * Sums up each n elements in an array of 24 items
+     */
+    protected function aggregateValues(array $values, int $elementsToUnite): array {
+        $result = array_fill(0, 24, 0);
+        $currentIndexInResult = $currentlyUnitedElements = 0;
+        foreach ($values as $value) {
+            $result[$currentIndexInResult] += $value;
+            if (++$currentlyUnitedElements === $elementsToUnite) {
+                ++$currentIndexInResult;
+                $currentlyUnitedElements = 0;
+            }
+        }
+        return $result;
     }
 
 }

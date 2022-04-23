@@ -18,14 +18,14 @@ class Generation extends EntsoEAdapter
     {
         $this->dryRun = $dryRun;
         foreach (parent::COUNTRIES as $countryKey => $country) {
-            if ($this->isDataNotPresent('generation', $countryKey, $date->format('Y-m-d'))) {
+            if ($this->isDataNotPresent('electricity_generation', $countryKey, $date->format('Y-m-d')) || $dryRun) {
                 // Fetch data of date
                 $response = $this->makeGetRequest([
                     'documentType' => 'A75',
                     'processType' => 'A16',
                     'in_domain' => $country,
-                    'periodStart' => \DateTime::createFromImmutable($date)->modify('-1 day')->format('Ymd2200'),
-                    'periodEnd' => $date->format('Ymd2200')
+                    'periodStart' => \DateTime::createFromImmutable($date)->modify('-1 day')->format('Ymd2300'),
+                    'periodEnd' => $date->format('Ymd2300')
                 ]);
                 if (!is_null($response)) {
                     $this->storeResultInDatabase($response, $countryKey, $date);
@@ -42,19 +42,24 @@ class Generation extends EntsoEAdapter
         if ($response->TimeSeries && $this->dryRun === false) {
             // Iterate through hourly values of each PSR and insert them into DB
             foreach ($this->psrTypesWithHourlyValues($response) as $psrName => $hourlyValues) {
+                $time = 0;
                 foreach ($hourlyValues as $value) {
                     $this->insertIntoDb('electricity_generation', [
                         'country' => $countryKey,
-                        'date' => $date->format('Y-m-d'),
+                        'datetime' => $date->format('Y-m-d') . "$time:00",
                         'psr_type' => $psrName,
                         'value' => $value,
                         'created_at' => date('Y-m-d H:i:s')
                     ]);
+                    ++$time;
                 }
             }
         }
         elseif ($this->dryRun === true) {
             echo "<p>Generation data from " . $date->format('Y-m-d') . " for country '$countryKey' would have been inserted into database (DryRun is activated)</p>";
+        }
+        else {
+            echo "<p>Failed to receive generation data for country '$countryKey'</p>";
         }
     }
 
@@ -78,6 +83,10 @@ class Generation extends EntsoEAdapter
             else if (count($rawValues) === 48) {
                 $result[$psrName] = $this->aggregateValues($rawValues, 2);
             }
+            // Incomplete dataset => Process anyway to keep existing data
+            else if (count($rawValues) < 24) {
+                $result[$psrName] = $this->aggregateValues($rawValues, 1);
+            }
         }
         return $result;
     }
@@ -89,49 +98,15 @@ class Generation extends EntsoEAdapter
     private function psrTypesWithRawValues(\SimpleXMLElement $xml): array
     {
         $result = [];
-
-        return $result;
-    }
-
-
-    /**
-     * Sums up each n elements in an array
-     */
-    private function aggregateValues(array $values, int $elementsToUnite): array {
-        $result = array_fill(0, 24, 0);
-        $currentIndexInResult = $currentlyUnitedElements = 0;
-        foreach ($values as $value) {
-            $result[$currentIndexInResult] += $value;
-            if (++$currentlyUnitedElements === $elementsToUnite) {
-                ++$currentIndexInResult;
-            }
-        }
-        return $result;
-    }
-
-
-
-
-
-    /**
-     * Takes XML response from EntsoE and returns an array with the generated sum per PSR type
-     * @param \SimpleXMLElement $xml Response from the EntsoE API
-     * @return array Associative array of format ['psr_code' => total_generation_in_mw] 
-     */
-    private function getAllPsrValues(\SimpleXMLElement $xml): array
-    {
-        $result = [];
         // Iterate over TimeSeries
         $seriesIndex = 0;
         while ($series = $xml->TimeSeries[$seriesIndex]) {
-            // Create PSR in array if not present
             $psr = $series->MktPSRType->psrType->__toString();
-            if (!isset($result[$psr])) $result[$psr] = 0;
+            $result[$psr] = [];
             // Iiterate over Points in TimeSeries
             $pointIndex = 0;
             while ($point = $series->Period->Point[$pointIndex]) {
-                // Add Generation to sum
-                $result[$psr] += intval($point->quantity->__toString());
+                $result[$psr][] = floatval($point->quantity->__toString());
                 $pointIndex++;
             }
             $seriesIndex++;

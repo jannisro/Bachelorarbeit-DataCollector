@@ -24,7 +24,7 @@ class DatabaseAdapter
     }
 
 
-    protected function insertIntoDb(string $table, array $data, bool $output = false): bool
+    protected function insertIntoDb(string $table, array $data): bool
     {
         foreach ($data as $key => $val) {
             $data[$key] = $this->db->real_escape_string($val);
@@ -32,6 +32,13 @@ class DatabaseAdapter
         $cols = '`' . implode('`, `', array_keys($data)) . '`';
         $values = "'" . implode("', '", array_values($data)) . "'";
         return $this->db->query("INSERT INTO `$table` ($cols) VALUES ($values)");
+    }
+
+
+    protected function runDbQuery(string $query): ?array
+    {
+        $res = $this->db->query($this->db->real_escape_string($query));
+        return $res ? $res->fetch_assoc() : null;
     }
 
 }
