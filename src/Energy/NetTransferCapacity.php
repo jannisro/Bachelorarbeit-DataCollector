@@ -54,8 +54,7 @@ class NetTransferCapacity extends EntsoEAdapter
         if ($response->TimeSeries && $this->dryRun === false) {
             // Iterate through hourly values of each PSR and insert them into DB
             $time = 0;
-            $rawValues = $this->xmlTimeSeriesToArray($response, 'quantity');
-            foreach ($this->aggregateHourlyValues($rawValues) as $hourlyValue) {
+            foreach ($this->xmlTimeSeriesToHourlyValues($response, 'quantity') as $hourlyValue) {
                 $this->insertIntoDb("electricity_net_transfer_capacities", [
                     'country_start' => $country1,
                     'country_end' => $country2,
@@ -67,10 +66,10 @@ class NetTransferCapacity extends EntsoEAdapter
             }
         }
         elseif ($this->dryRun === true) {
-            echo "<p>Commercial flow data from " . $date->format('Y-m-d') . " for border '$country1->$country2' would have been inserted into database (DryRun is activated)</p>";
+            echo "<p>NTC data from " . $date->format('Y-m-d') . " for border '$country1->$country2' would have been inserted into database (DryRun is activated)</p>";
         }
         else {
-            echo "<p>Failed to receive commercial flow data for border '$country1->$country2'</p>";
+            echo "<p>Failed to receive NTC data for border '$country1->$country2'</p>";
         }
     }
 

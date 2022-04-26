@@ -2,8 +2,6 @@
 
 namespace DataCollector;
 
-use DateTime;
-
 class EntsoeAdapter extends DatabaseAdapter
 {
 
@@ -44,24 +42,44 @@ class EntsoeAdapter extends DatabaseAdapter
     ];
 
 
-    const CURRENT_BIDDING_ZONES = [
-        'DE' => '10Y1001A1001A82H',
-        'FR' => '10YFR-RTE------C',
-        'AT' => '10YAT-APG------L',
-        'BE' => '10YBE----------2',
-        'BG' => '10YCA-BULGARIA-R',
-        'CH' => '10YCH-SWISSGRIDZ',
-        'CZ' => '10YCZ-CEPS-----N',
-        'ES' => '10YES-REE------0',
-        'HU' => '10YHU-MAVIR----U',
-        'IT' => '10Y1001A1001A73I',
-        'NL' => '10YNL----------L',
-        'NO' => '10YNO-1--------2',
-        'PL' => '10YPL-AREA-----S',
-        'PT' => '10YPT-REN------W',
-        'RO' => '10YRO-TEL------P',
-        'SE' => '10Y1001A1001A44P',
-        'DK' => '10YDK-1--------W'
+    const BIDDING_ZONES = [
+        'AL' => ['10YAL-KESH-----5'],
+        'AT' => ['10YAT-APG------L'],
+        'BA' => ['10YBA-JPCC-----D'],
+        'BE' => ['10YBE----------2'],
+        'BG' => ['10YCA-BULGARIA-R'],
+        'CH' => ['10YCH-SWISSGRIDZ'],
+        'CZ' => ['10YCZ-CEPS-----N'],
+        'DE' => ['10Y1001A1001A82H'],
+        'DK' => ['10YDK-1--------W', '10YDK-2--------M'],
+        'EE' => ['10Y1001A1001A39I'],
+        'ES' => ['10YES-REE------0'],
+        'FI' => ['10YFI-1--------U'],
+        'FR' => ['10YFR-RTE------C'],
+        'GR' => ['10YGR-HTSO-----Y'],
+        'HR' => ['10YHR-HEP------M'],
+        'HU' => ['10YHU-MAVIR----U'],
+        'IT' => ['10YIT-GRTN-----B'],
+        'LT' => ['10YLT-1001A0008Q'],
+        'LU' => ['10Y1001A1001A82H'],
+        'LV' => ['10YLV-1001A00074'],
+        'ME' => ['10YCS-CG-TSO---S'],
+        'MK' => ['10YMK-MEPSO----8'],
+        'NL' => ['10YNL----------L'],
+        'NO' => ['10YNO-2--------T', '10YNO-1--------2', '50Y0JVU59B4JWQCU', '10YNO-3--------J', '10YNO-4--------9', '10Y1001A1001A48H'],
+        'PL' => ['10YPL-AREA-----S'],
+        'PT' => ['10YPT-REN------W'],
+        'RO' => ['10YRO-TEL------P'],
+        'RS' => ['10YCS-SERBIATSOV'],
+        'SE' => ['10Y1001A1001A44P', '10Y1001A1001A45N', '10Y1001A1001A46L', '10Y1001A1001A47J'],
+        'SI' => ['10YSI-ELES-----O'],
+        'SK' => ['10YSK-SEPS-----K']
+    ];
+
+    const BIDDING_ZONES_CHANGES_PRE_2018 = [
+        'AT' => ['10Y1001A1001A63L'],
+        'DE' => ['10Y1001A1001A63L'],
+        'LU' => ['10Y1001A1001A63L'],
     ];
 
 
@@ -228,6 +246,17 @@ class EntsoeAdapter extends DatabaseAdapter
             $result = $this->aggregateValues($rawValues, 1);
         }
         return $result;
+    }
+
+
+    /**
+     * Transforms XML time series to aggregated hourly array
+     */
+    protected function xmlTimeSeriesToHourlyValues(\SimpleXMLElement $xml, string $dataElementName): array
+    {
+        return $this->aggregateHourlyValues(
+            $this->xmlTimeSeriesToArray($xml, $dataElementName)
+        );
     }
 
 }

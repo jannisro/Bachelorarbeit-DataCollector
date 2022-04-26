@@ -42,8 +42,7 @@ class ElectricityPrice extends EntsoEAdapter
         if ($response->TimeSeries && $this->dryRun === false) {
             // Iterate through hourly values and insert them into DB
             $time = 0;
-            $rawValues = $this->xmlTimeSeriesToArray($response, 'price.amount');
-            foreach ($this->aggregateHourlyValues($rawValues) as $hourlyValue) {
+            foreach ($this->xmlTimeSeriesToHourlyValues($response, 'price.amount') as $hourlyValue) {
                 $this->insertIntoDb('electricity_prices', [
                     'country' => $countryKey,
                     'datetime' => $date->format('Y-m-d') . "$time:00",
