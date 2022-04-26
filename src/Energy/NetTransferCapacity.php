@@ -4,7 +4,7 @@ namespace DataCollector\Energy;
 
 use DataCollector\EntsoEAdapter;
 
-class CommercialFlow extends EntsoEAdapter
+class NetTransferCapacity extends EntsoEAdapter
 {
 
     private bool $dryRun;
@@ -18,7 +18,10 @@ class CommercialFlow extends EntsoEAdapter
     {
         $this->dryRun = $dryRun;
         foreach (parent::BORDER_RELATIONS as $country1 => $neighbors) {
-            if ($this->isDataNotPresent('electricity_flow_commercial', $country1, $date->format('Y-m-d')) || $dryRun) {
+            if (
+                $this->isDataNotPresent('electricity_net_transfer_capacities', $country1, $date->format('Y-m-d')) 
+                || $dryRun
+            ) {
                 $this->getDataOfBorderRelations($country1, $neighbors, $date);
             }
         }
@@ -31,7 +34,8 @@ class CommercialFlow extends EntsoEAdapter
         foreach ($neighbors as $neighbor) {
             // Fetch data of date
             $response = $this->makeGetRequest([
-                'documentType' => 'A09',
+                'documentType' => 'A61',
+                'contract_MarketAgreement.Type' => 'A01',
                 'in_Domain' => parent::COUNTRIES[$originCountry],
                 'out_Domain' => parent::COUNTRIES[$neighbor],
                 'periodStart' => \DateTime::createFromImmutable($date)->modify('-1 day')->format('Ymd2200'),
@@ -52,7 +56,7 @@ class CommercialFlow extends EntsoEAdapter
             $time = 0;
             $rawValues = $this->xmlTimeSeriesToArray($response, 'quantity');
             foreach ($this->aggregateHourlyValues($rawValues) as $hourlyValue) {
-                $this->insertIntoDb("electricity_flow_commercial", [
+                $this->insertIntoDb("electricity_net_transfer_capacities", [
                     'country_start' => $country1,
                     'country_end' => $country2,
                     'datetime' => $date->format('Y-m-d') . " $time:00",

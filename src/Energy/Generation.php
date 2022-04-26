@@ -14,7 +14,7 @@ class Generation extends EntsoEAdapter
      * @param \DateTimeImmutable $date Date for which data should be queried
      * @param bool $dryRun true=No data is stored and method is run for test purposes
      */
-    public function actualGenerationPerType(\DateTimeImmutable $date, bool $dryRun = false): void
+    public function __invoke(\DateTimeImmutable $date, bool $dryRun = false): void
     {
         $this->dryRun = $dryRun;
         foreach (parent::COUNTRIES as $countryKey => $country) {

@@ -17,7 +17,7 @@ class ElectricityPrice extends EntsoEAdapter
     public function dayAheadPrices(\DateTimeImmutable $date, bool $dryRun = false): void
     {
         $this->dryRun = $dryRun;
-        foreach (parent::BIDDING_ZONES_PRICES as $countryKey => $country) {
+        foreach (parent::CURRENT_BIDDING_ZONES as $countryKey => $country) {
             if ($this->isDataNotPresent('electricity_prices', $countryKey, $date->format('Y-m-d')) || $dryRun) {
                 // Fetch data of date
                 $response = $this->makeGetRequest([
@@ -41,8 +41,9 @@ class ElectricityPrice extends EntsoEAdapter
         // When TimeSeries is present and dry run is deactivated
         if ($response->TimeSeries && $this->dryRun === false) {
             // Iterate through hourly values and insert them into DB
-            foreach ($this->hourlyValues($response) as $hourlyValue) {
-                $time = 0;
+            $time = 0;
+            $rawValues = $this->xmlTimeSeriesToArray($response, 'price.amount');
+            foreach ($this->aggregateHourlyValues($rawValues) as $hourlyValue) {
                 $this->insertIntoDb('electricity_prices', [
                     'country' => $countryKey,
                     'datetime' => $date->format('Y-m-d') . "$time:00",
@@ -58,54 +59,6 @@ class ElectricityPrice extends EntsoEAdapter
         else {
             echo "<p>Failed to receive electricity price data for country '$countryKey'</p>";
         }
-    }
-
-
-    /**
-     * Returns hourly values of each PSR type ([psr1 => [hourlyValues], psr2 => [hourlyValues], ...])
-     */
-    private function hourlyValues(\SimpleXMLElement $xml): array
-    {
-        $result = [];
-        $rawValues = $this->rawValues($xml);
-        // Raw values are hourly => No need for processing
-        if (count($rawValues) === 24) {
-            $result = $rawValues;
-        }
-        // Raw values are quarter hourly => Aggregate to hourly
-        else if (count($rawValues) === 96) {
-            $result = $this->aggregateValues($rawValues, 4);
-        }
-        // Raw values are half hourly => Aggregate to hourly
-        else if (count($rawValues) === 48) {
-            $result = $this->aggregateValues($rawValues, 2);
-        }
-        // Incomplete dataset => Process anyway to keep existing data
-        else if (count($rawValues) < 24) {
-            $result = $this->aggregateValues($rawValues, 1);
-        }
-        return $result;
-    }
-
-
-    /**
-     * Parses XML response to an array of format [psr1 => [values], psr2 => [values]]
-     */
-    private function rawValues(\SimpleXMLElement $xml): array
-    {
-        $result = [];
-        // Iterate over TimeSeries
-        $seriesIndex = 0;
-        while ($series = $xml->TimeSeries[$seriesIndex]) {
-            // Iiterate over Points in TimeSeries
-            $pointIndex = 0;
-            while ($point = $series->Period->Point[$pointIndex]) {
-                $result[] = floatval($point->{'price.amount'}->__toString());
-                $pointIndex++;
-            }
-            $seriesIndex++;
-        }
-        return $result;
     }
 
 }

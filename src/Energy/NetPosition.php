@@ -39,7 +39,7 @@ class NetPosition extends EntsoEAdapter
                     $this->insertIntoDb('electricity_net_positions', [
                         'country' => $country,
                         'datetime' => $generation[$i]['datetime'],
-                        'value' => floatval($generation[$i]['datetime']) - floatval($load[$i]['datetime']),
+                        'value' => floatval($generation[$i]['value']) - floatval($load[$i]['value']),
                         'created_at' => date('Y-m-d H:i')
                     ]);
                 }

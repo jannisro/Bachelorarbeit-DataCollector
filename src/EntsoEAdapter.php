@@ -44,7 +44,7 @@ class EntsoeAdapter extends DatabaseAdapter
     ];
 
 
-    const BIDDING_ZONES_PRICES = [
+    const CURRENT_BIDDING_ZONES = [
         'DE' => '10Y1001A1001A82H',
         'FR' => '10YFR-RTE------C',
         'AT' => '10YAT-APG------L',
@@ -83,20 +83,20 @@ class EntsoeAdapter extends DatabaseAdapter
         'HR' => ['BA', 'HU', 'RS', 'SI'],
         'HU' => ['AT', 'HR', 'RO', 'RS', 'SK'],
         'IT' => ['AT', 'FR', 'GR', 'ME', 'SI', 'CH'],
-        'LT' => [],
-        'LU' => [],
-        'LV' => [],
-        'ME' => [],
-        'MK' => [],
-        'NL' => [],
-        'NO' => [],
-        'PL' => [],
-        'PT' => [],
-        'RO' => [],
-        'RS' => [],
-        'SE' => [],
-        'SI' => [],
-        'SK' => []
+        'LT' => ['LV', 'PL', 'SE'],
+        'LU' => ['DE', 'BE'],
+        'LV' => ['EE', 'LT'],
+        'ME' => ['AL', 'IT', 'RS'],
+        'MK' => ['BG', 'GR', 'RS'],
+        'NL' => ['BE', 'DK', 'DE', 'NO'],
+        'NO' => ['DK', 'FI', 'DE', 'NL', 'SE'],
+        'PL' => ['CZ', 'DE', 'LT', 'SK', 'SE'],
+        'PT' => ['ES'],
+        'RO' => ['BG', 'HU', 'RS'],
+        'RS' => ['AL', 'BA', 'BG', 'HR', 'HU', 'ME', 'RO', 'MK'],
+        'SE' => ['DK', 'FI', 'DE', 'LT', 'NO', 'PL'],
+        'SI' => ['AT', 'HR', 'IT'],
+        'SK' => ['CZ', 'HU', 'PL']
     ];
 
 
@@ -179,6 +179,53 @@ class EntsoeAdapter extends DatabaseAdapter
                 ++$currentIndexInResult;
                 $currentlyUnitedElements = 0;
             }
+        }
+        return $result;
+    }
+
+
+    /**
+     * Transforms XML time series data to array
+     */
+    protected function xmlTimeSeriesToArray(\SimpleXMLElement $xml, string $dataElementName): array
+    {
+        $result = [];
+        // Iterate over TimeSeries
+        $seriesIndex = 0;
+        while ($series = $xml->TimeSeries[$seriesIndex]) {
+            // Iiterate over Points in TimeSeries
+            $pointIndex = 0;
+            while ($point = $series->Period->Point[$pointIndex]) {
+                $result[] = floatval($point->{$dataElementName}->__toString());
+                $pointIndex++;
+            }
+            $seriesIndex++;
+        }
+        return $result;
+    }
+
+
+    /**
+     * Transforms raw time series data to hourly aggregated
+     */
+    protected function aggregateHourlyValues(array $rawValues): array
+    {
+        $result = [];
+        // Raw values are hourly => No need for processing
+        if (count($rawValues) === 24) {
+            $result = $rawValues;
+        }
+        // Raw values are quarter hourly => Aggregate to hourly
+        else if (count($rawValues) === 96) {
+            $result = $this->aggregateValues($rawValues, 4);
+        }
+        // Raw values are half hourly => Aggregate to hourly
+        else if (count($rawValues) === 48) {
+            $result = $this->aggregateValues($rawValues, 2);
+        }
+        // Incomplete dataset => Process anyway to keep existing data
+        else if (count($rawValues) < 24) {
+            $result = $this->aggregateValues($rawValues, 1);
         }
         return $result;
     }
