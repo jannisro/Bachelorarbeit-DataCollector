@@ -18,18 +18,16 @@ class Generation extends EntsoEAdapter
     {
         $this->dryRun = $dryRun;
         foreach (parent::COUNTRIES as $countryKey => $country) {
-            if ($this->isDataNotPresent('electricity_generation', $countryKey, $date->format('Y-m-d')) || $dryRun) {
-                // Fetch data of date
-                $response = $this->makeGetRequest([
-                    'documentType' => 'A75',
-                    'processType' => 'A16',
-                    'in_domain' => $country,
-                    'periodStart' => \DateTime::createFromImmutable($date)->modify('-1 day')->format('Ymd2300'),
-                    'periodEnd' => $date->format('Ymd2300')
-                ]);
-                if (!is_null($response)) {
-                    $this->storeResultInDatabase($response, $countryKey, $date);
-                }
+            // Fetch data of date
+            $response = $this->makeGetRequest([
+                'documentType' => 'A75',
+                'processType' => 'A16',
+                'in_domain' => $country,
+                'periodStart' => \DateTime::createFromImmutable($date)->modify('-1 day')->format('Ymd2300'),
+                'periodEnd' => $date->format('Ymd2300')
+            ]);
+            if (!is_null($response)) {
+                $this->storeResultInDatabase($response, $countryKey, $date);
             }
         }
         echo 'Done';

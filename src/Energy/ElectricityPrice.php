@@ -10,26 +10,24 @@ class ElectricityPrice extends EntsoEAdapter
     private bool $dryRun;
 
     /**
-     * Requests and stores elctricity prices of all countries
+     * Requests and stores elctricity prices of all countries (of the first bidding zone in mapping)
      * @param \DateTimeImmutable $date Date for which data should be queried
      * @param bool $dryRun true=No data is stored and method is run for test purposes
      */
-    public function dayAheadPrices(\DateTimeImmutable $date, bool $dryRun = false): void
+    public function __invoke(\DateTimeImmutable $date, bool $dryRun = false): void
     {
         $this->dryRun = $dryRun;
-        foreach (parent::CURRENT_BIDDING_ZONES as $countryKey => $country) {
-            if ($this->isDataNotPresent('electricity_prices', $countryKey, $date->format('Y-m-d')) || $dryRun) {
-                // Fetch data of date
-                $response = $this->makeGetRequest([
-                    'documentType' => 'A44',
-                    'in_Domain' => $country,
-                    'out_Domain' => $country,
-                    'periodStart' => \DateTime::createFromImmutable($date)->modify('-1 day')->format('Ymd2200'),
-                    'periodEnd' => $date->format('Ymd2200')
-                ]);
-                if (!is_null($response)) {
-                    $this->storeResultInDatabase($response, $countryKey, $date);
-                }
+        foreach ($this->getBiddingZones($date) as $countryKey => $biddingZones) {
+            // Fetch data of date
+            $response = $this->makeGetRequest([
+                'documentType' => 'A44',
+                'in_Domain' => $biddingZones[0],
+                'out_Domain' => $biddingZones[0],
+                'periodStart' => \DateTime::createFromImmutable($date)->modify('-1 day')->format('Ymd2200'),
+                'periodEnd' => $date->format('Ymd2200')
+            ]);
+            if (!is_null($response)) {
+                $this->storeResultInDatabase($response, $countryKey, $date);
             }
         }
         echo 'Done';

@@ -18,43 +18,89 @@ class NetTransferCapacity extends EntsoEAdapter
     {
         $this->dryRun = $dryRun;
         foreach (parent::BORDER_RELATIONS as $country1 => $neighbors) {
-            if (
-                $this->isDataNotPresent('electricity_net_transfer_capacities', $country1, $date->format('Y-m-d')) 
-                || $dryRun
-            ) {
-                $this->getDataOfBorderRelations($country1, $neighbors, $date);
-            }
+            $this->storeCountryData($country1, $neighbors, $date);
         }
         echo 'Done';
     }
 
 
-    private function getDataOfBorderRelations(string $originCountry, array $neighbors, \DateTimeImmutable $date): void
+    /**
+     * Stores data of all borders of a countries
+     */
+    private function storeCountryData(string $originCountry, array $neighbors, \DateTimeImmutable $date): void
     {
-        foreach ($neighbors as $neighbor) {
-            // Fetch data of date
-            $response = $this->makeGetRequest([
-                'documentType' => 'A61',
-                'contract_MarketAgreement.Type' => 'A01',
-                'in_Domain' => parent::COUNTRIES[$originCountry],
-                'out_Domain' => parent::COUNTRIES[$neighbor],
-                'periodStart' => \DateTime::createFromImmutable($date)->modify('-1 day')->format('Ymd2200'),
-                'periodEnd' => $date->format('Ymd2200')
-            ]);
-            if (!is_null($response)) {
-                $this->storeResultInDatabase($response, $originCountry, $neighbor, $date);
-            }
+        foreach ($neighbors as $targetCountry) {
+            $this->storeBorderRelationData(
+                $this->getHourlyValuesOfBorderRelation($originCountry, $targetCountry, $date),
+                $originCountry,
+                $targetCountry,
+                $date
+            );
         }
     }
 
 
-    private function storeResultInDatabase(\SimpleXMLElement $response, string $country1, string $country2, \DateTimeImmutable $date): void
+    /**
+     * Returns hourly values of country->country
+     */
+    private function getHourlyValuesOfBorderRelation(string $originCountry, string $targetCountry, \DateTimeImmutable $date): array
+    {
+        $totalHourlyValues = array_fill(0, 24, 0);
+        foreach ($this->getBiddingZones($date)[$originCountry] as $originBiddingZone) {
+            $totalHourlyValues = $this->addArrayValues(
+                $totalHourlyValues, 
+                $this->getHourlyValuesOfOriginZone($originBiddingZone, $targetCountry, $date)
+            );
+        }
+        return $totalHourlyValues;
+    }
+
+
+    /**
+     * Returns hourly values of BiddingZone->Country
+     */
+    private function getHourlyValuesOfOriginZone(string $originBiddingZone, string $targetCountry, \DateTimeImmutable $date): array 
+    {
+        $totalHourlyValues = array_fill(0, 24, 0);
+        foreach ($this->getBiddingZones($date)[$targetCountry] as $targetBiddingZone) {
+            $totalHourlyValues = $this->addArrayValues(
+                $totalHourlyValues,
+                $this->getHourlyValuesOfZoneRelation($originBiddingZone, $targetBiddingZone, $date)
+            );
+        }
+        return $totalHourlyValues;
+    }
+
+
+    /**
+     * Returns hourly values of BiddingZone->BiddingZone
+     */
+    private function getHourlyValuesOfZoneRelation(string $originBiddingZone, string $targetBiddingZone, \DateTimeImmutable $date): array
+    {
+        $response = $this->makeGetRequest([
+            'documentType' => 'A61',
+            'contract_MarketAgreement.Type' => 'A01',
+            'in_Domain' => $targetBiddingZone,
+            'out_Domain' => $originBiddingZone,
+            'periodStart' => \DateTime::createFromImmutable($date)->modify('-1 day')->format('Ymd2200'),
+            'periodEnd' => $date->format('Ymd2200')
+        ]);
+        if (!is_null($response) && $response->TimeSeries && $this->dryRun === false) {
+            return $this->xmlTimeSeriesToHourlyValues($response, 'quantity');
+        }
+        return array_fill(0, 24, 0);
+    }
+
+
+    /**
+     * Stores hourly values of country->country in database
+     */
+    private function storeBorderRelationData(array $hourlyValues, string $country1, string $country2, \DateTimeImmutable $date): void
     {
         // When TimeSeries is present and dry run is deactivated
-        if ($response->TimeSeries && $this->dryRun === false) {
-            // Iterate through hourly values of each PSR and insert them into DB
+        if (array_sum($hourlyValues) > 0 && $this->dryRun === false) {
             $time = 0;
-            foreach ($this->xmlTimeSeriesToHourlyValues($response, 'quantity') as $hourlyValue) {
+            foreach ($hourlyValues as $hourlyValue) {
                 $this->insertIntoDb("electricity_net_transfer_capacities", [
                     'country_start' => $country1,
                     'country_end' => $country2,
@@ -74,18 +120,12 @@ class NetTransferCapacity extends EntsoEAdapter
     }
 
 
-    /**
-     * Checks whether the datbase already contains data for a given country and date
-     */
-    protected function isDataNotPresent(string $tableName, string $countryKey, string $date): bool
+    private function addArrayValues(array $existingArray, array $arrayToAdd): array 
     {
-        $res = $this->getDb()->query(
-            "SELECT * 
-            FROM `$tableName` 
-            WHERE `country_start` = '$countryKey' 
-                AND `datetime` LIKE '$date%'"
-        );
-        return $res && $res->num_rows === 0;
+        for ($i=0; $i < count($arrayToAdd); $i++) { 
+            $existingArray[$i] += $arrayToAdd[$i];
+        }
+        return $existingArray;
     }
 
 }

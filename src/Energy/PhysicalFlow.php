@@ -17,29 +17,32 @@ class PhysicalFlow extends EntsoEAdapter
     public function physicalFlow(\DateTimeImmutable $date, bool $dryRun = false): void
     {
         $this->dryRun = $dryRun;
-        foreach (parent::BORDER_RELATIONS as $country1 => $neighbors) {
-            if ($this->isDataNotPresent('electricity_flow_physical', $country1, $date->format('Y-m-d')) || $dryRun) {
-                $this->getDataOfBorderRelations($country1, $neighbors, $date);
-            }
+        foreach (parent::BORDER_RELATIONS as $country => $neighbors) {
+            $this->storeDataOfCountry($country, $neighbors, $date);
         }
         echo 'Done';
     }
 
 
-    private function getDataOfBorderRelations(string $originCountry, array $neighbors, \DateTimeImmutable $date): void
+    private function storeDataOfCountry(string $originCountry, array $neighbors, \DateTimeImmutable $date): void
     {
-        foreach ($neighbors as $neighbor) {
-            // Fetch data of date
-            $response = $this->makeGetRequest([
-                'documentType' => 'A11',
-                'out_Domain' => parent::COUNTRIES[$originCountry],
-                'in_Domain' => parent::COUNTRIES[$neighbor],
-                'periodStart' => \DateTime::createFromImmutable($date)->modify('-1 day')->format('Ymd2200'),
-                'periodEnd' => $date->format('Ymd2200')
-            ]);
-            if (!is_null($response)) {
-                $this->storeResultInDatabase($response, $originCountry, $neighbor, $date);
-            }
+        foreach ($neighbors as $targetCountry) {
+            $this->storeDataOfBorderRelation($originCountry, $targetCountry, $date);
+        }
+    }
+
+
+    private function storeDataOfBorderRelation(string $originCountry, string $targetCountry, \DateTimeImmutable $date): void
+    {
+        $response = $this->makeGetRequest([
+            'documentType' => 'A11',
+            'out_Domain' => parent::COUNTRIES[$originCountry],
+            'in_Domain' => parent::COUNTRIES[$targetCountry],
+            'periodStart' => \DateTime::createFromImmutable($date)->modify('-1 day')->format('Ymd2200'),
+            'periodEnd' => $date->format('Ymd2200')
+        ]);
+        if (!is_null($response)) {
+            $this->storeResultInDatabase($response, $originCountry, $targetCountry, $date);
         }
     }
 
@@ -67,21 +70,6 @@ class PhysicalFlow extends EntsoEAdapter
         else {
             echo "<p>Failed to receive physical flow data for border '$country1->$country2'</p>";
         }
-    }
-
-
-    /**
-     * Checks whether the datbase already contains data for a given country and date
-     */
-    protected function isDataNotPresent(string $tableName, string $countryKey, string $date): bool
-    {
-        $res = $this->getDb()->query(
-            "SELECT * 
-            FROM `$tableName` 
-            WHERE `country_start` = '$countryKey' 
-                AND `datetime` LIKE '$date%'"
-        );
-        return $res && $res->num_rows === 0;
     }
 
 }

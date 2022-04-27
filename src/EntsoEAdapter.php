@@ -259,4 +259,20 @@ class EntsoeAdapter extends DatabaseAdapter
         );
     }
 
+
+    /**
+     * Returns current bidding zones based on given date by applying necessary changes
+     */
+    protected function getBiddingZones(\DateTimeImmutable $date): array
+    {
+        if ($date->getTimestamp() < strtotime('2018-01-01')) { 
+            $result = self::BIDDING_ZONES;
+            foreach (self::BIDDING_ZONES_CHANGES_PRE_2018 as $key => $value) {
+                $result[$key] = $value;
+            }
+            return $result;
+        }
+        return self::BIDDING_ZONES;
+    }
+
 }

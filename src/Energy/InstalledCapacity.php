@@ -4,7 +4,7 @@ namespace DataCollector\Energy;
 
 use DataCollector\EntsoeAdapter;
 
-class InstalledCapacities extends EntsoEAdapter
+class InstalledCapacity extends EntsoEAdapter
 {
 
     private bool $dryRun;
@@ -18,27 +18,18 @@ class InstalledCapacities extends EntsoEAdapter
     {
         $this->dryRun = $dryRun;
         foreach (parent::COUNTRIES as $countryKey => $country) {
-            if ($this->isDataNotPresent('electricity_installed_capacities', $countryKey, $date->format('Y'))) {
-                $response = $this->makeGetRequest([
-                    'documentType' => 'A68',
-                    'processType' => 'A33',
-                    'in_domain' => $country,
-                    'periodStart' => \DateTime::createFromImmutable($date)->modify('-1 year')->format('Y12312300'),
-                    'periodEnd' => $date->format('Y12312300')
-                ]);
-                if (!is_null($response)) {
-                    $this->storeResultInDatabase($response, $countryKey, $date);
-                }
+            $response = $this->makeGetRequest([
+                'documentType' => 'A68',
+                'processType' => 'A33',
+                'in_domain' => $country,
+                'periodStart' => \DateTime::createFromImmutable($date)->modify('-1 year')->format('Y12312300'),
+                'periodEnd' => $date->format('Y12312300')
+            ]);
+            if (!is_null($response)) {
+                $this->storeResultInDatabase($response, $countryKey, $date);
             }
         }
         echo 'Done';
-    }
-
-
-    protected function isDataNotPresent(string $tableName, string $countryKey, string $date): bool
-    {
-        $res = $this->getDb()->query("SELECT * FROM `$tableName` WHERE `country` = '$countryKey' AND `year` = '$date'");
-        return $res && $res->num_rows === 0;
     }
 
 

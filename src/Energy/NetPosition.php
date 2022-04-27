@@ -18,9 +18,7 @@ class NetPosition extends EntsoEAdapter
     {
         $this->dryRun = $dryRun;
         foreach (parent::COUNTRIES as $countryKey => $country) {
-            if ($this->isDataNotPresent('electricity_net_positions', $countryKey, $date->format('Y-m-d')) || $dryRun) {
-                $this->calculateAndStoreNetPositions($countryKey, $date);
-            }
+            $this->calculateAndStoreNetPositions($countryKey, $date);
         }
         echo 'Done';
     }
@@ -28,21 +26,16 @@ class NetPosition extends EntsoEAdapter
 
     private function calculateAndStoreNetPositions(string $country, \DateTimeImmutable $date): void
     {
-        if (
-            !$this->isDataNotPresent('electricity_generation', $country, $date->format('Y-m-d'))
-            && !$this->isDataNotPresent('electricity_load', $country, $date->format('Y-m-d'))
-        ) {
-            $generation = $this->getHourlyData('generation', $country, $date);
-            $load = $this->getHourlyData('load', $country, $date);
-            if ($generation && $load) {
-                for ($i = 0; $i < 24; $i++) {
-                    $this->insertIntoDb('electricity_net_positions', [
-                        'country' => $country,
-                        'datetime' => $generation[$i]['datetime'],
-                        'value' => floatval($generation[$i]['value']) - floatval($load[$i]['value']),
-                        'created_at' => date('Y-m-d H:i')
-                    ]);
-                }
+        $generation = $this->getHourlyData('generation', $country, $date);
+        $load = $this->getHourlyData('load', $country, $date);
+        if ($generation && $load) {
+            for ($i = 0; $i < 24; $i++) {
+                $this->insertIntoDb('electricity_net_positions', [
+                    'country' => $country,
+                    'datetime' => $generation[$i]['datetime'],
+                    'value' => floatval($generation[$i]['value']) - floatval($load[$i]['value']),
+                    'created_at' => date('Y-m-d H:i')
+                ]);
             }
         }
     }

@@ -18,18 +18,16 @@ class Load extends EntsoEAdapter
     {
         $this->dryRun = $dryRun;
         foreach (parent::COUNTRIES as $countryKey => $country) {
-            if ($this->isDataNotPresent('electricity_load', $countryKey, $date->format('Y-m-d')) || $dryRun) {
-                // Fetch data of date
-                $response = $this->makeGetRequest([
-                    'documentType' => 'A65',
-                    'processType' => 'A16',
-                    'outBiddingZone_Domain' => $country,
-                    'periodStart' => \DateTime::createFromImmutable($date)->modify('-1 day')->format('Ymd2200'),
-                    'periodEnd' => $date->format('Ymd2200')
-                ]);
-                if (!is_null($response)) {
-                    $this->storeResultInDatabase($response, $countryKey, $date);
-                }
+            // Fetch data of date
+            $response = $this->makeGetRequest([
+                'documentType' => 'A65',
+                'processType' => 'A16',
+                'outBiddingZone_Domain' => $country,
+                'periodStart' => \DateTime::createFromImmutable($date)->modify('-1 day')->format('Ymd2200'),
+                'periodEnd' => $date->format('Ymd2200')
+            ]);
+            if (!is_null($response)) {
+                $this->storeResultInDatabase($response, $countryKey, $date);
             }
         }
         echo 'Done';
