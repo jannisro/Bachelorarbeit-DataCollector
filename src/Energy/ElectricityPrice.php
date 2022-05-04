@@ -43,7 +43,7 @@ class ElectricityPrice extends EntsoEAdapter
             foreach ($this->xmlTimeSeriesToHourlyValues($response, 'price.amount') as $hourlyValue) {
                 $this->insertIntoDb('electricity_prices', [
                     'country' => $countryKey,
-                    'datetime' => $date->format('Y-m-d') . "$time:00",
+                    'datetime' => $date->format('Y-m-d') . " $time:00",
                     'value' => $hourlyValue,
                     'created_at' => date('Y-m-d H:i:s')
                 ]);

@@ -43,7 +43,7 @@ class Load extends EntsoEAdapter
             foreach ($this->xmlTimeSeriesToHourlyValues($response, 'quantity') as $hourlyValue) {
                 $this->insertIntoDb("electricity_load", [
                     'country' => $countryKey,
-                    'datetime' => $date->format('Y-m-d') . "$time:00",
+                    'datetime' => $date->format('Y-m-d') . " $time:00",
                     'value' => $hourlyValue,
                     'created_at' => date('Y-m-d H:i:s')
                 ]);

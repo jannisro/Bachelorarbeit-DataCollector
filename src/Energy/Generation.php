@@ -44,7 +44,7 @@ class Generation extends EntsoEAdapter
                 foreach ($hourlyValues as $value) {
                     $this->insertIntoDb('electricity_generation', [
                         'country' => $countryKey,
-                        'datetime' => $date->format('Y-m-d') . "$time:00",
+                        'datetime' => $date->format('Y-m-d') . " $time:00",
                         'psr_type' => $psrName,
                         'value' => $value,
                         'created_at' => date('Y-m-d H:i:s')

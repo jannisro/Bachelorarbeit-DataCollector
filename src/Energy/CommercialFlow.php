@@ -3,6 +3,7 @@
 namespace DataCollector\Energy;
 
 use DataCollector\EntsoEAdapter;
+use SimpleXMLElement;
 
 class CommercialFlow extends EntsoEAdapter
 {

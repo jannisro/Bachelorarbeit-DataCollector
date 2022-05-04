@@ -32,7 +32,7 @@ if (isset($_GET['class']) && in_array($_GET['class'], $availableClassnames)) {
     }
 
     $class = "DataCollector\\Energy\\{$_GET['class']}";
-    (new $class)($date, true);
+    (new $class)($date, false);
 }
 else {
     echo "<h1>Invalid classname</h1>";

@@ -196,6 +196,7 @@ class EntsoeAdapter extends DatabaseAdapter
             if (++$currentlyUnitedElements === $elementsToUnite) {
                 ++$currentIndexInResult;
                 $currentlyUnitedElements = 0;
+                $result[$currentIndexInResult-1] = $result[$currentIndexInResult-1] / $elementsToUnite;
             }
         }
         return $result;
@@ -203,21 +204,43 @@ class EntsoeAdapter extends DatabaseAdapter
 
 
     /**
+     * Transforms XML time series to aggregated hourly array
+     */
+    protected function xmlTimeSeriesToHourlyValues(\SimpleXMLElement $xml, string $dataElementName, int $timeSeriesIndex = 0): array
+    {
+        return $this->aggregateHourlyValues(
+            $this->xmlTimeSeriesPeriodsToArray($xml, $dataElementName, $timeSeriesIndex)
+        );
+    }
+
+
+    /**
+     * Returns current bidding zones based on given date by applying necessary changes
+     */
+    protected function getBiddingZones(\DateTimeImmutable $date): array
+    {
+        if ($date->getTimestamp() < strtotime('2018-01-01')) { 
+            $result = self::BIDDING_ZONES;
+            foreach (self::BIDDING_ZONES_CHANGES_PRE_2018 as $key => $value) {
+                $result[$key] = $value;
+            }
+            return $result;
+        }
+        return self::BIDDING_ZONES;
+    }
+
+
+    /**
      * Transforms XML time series data to array
      */
-    protected function xmlTimeSeriesToArray(\SimpleXMLElement $xml, string $dataElementName): array
+    private function xmlTimeSeriesPeriodsToArray(\SimpleXMLElement $xml, string $dataElementName, int $timeSeriesIndex): array
     {
         $result = [];
-        // Iterate over TimeSeries
-        $seriesIndex = 0;
-        while ($series = $xml->TimeSeries[$seriesIndex]) {
-            // Iiterate over Points in TimeSeries
-            $pointIndex = 0;
-            while ($point = $series->Period->Point[$pointIndex]) {
-                $result[] = floatval($point->{$dataElementName}->__toString());
-                $pointIndex++;
-            }
-            $seriesIndex++;
+        // Iiterate over Points in TimeSeries
+        $pointIndex = 0;
+        while ($point = $xml->TimeSeries[$timeSeriesIndex]->Period->Point[$pointIndex]) {
+            $result[] = floatval($point->{$dataElementName}->__toString());
+            $pointIndex++;
         }
         return $result;
     }
@@ -226,7 +249,7 @@ class EntsoeAdapter extends DatabaseAdapter
     /**
      * Transforms raw time series data to hourly aggregated
      */
-    protected function aggregateHourlyValues(array $rawValues): array
+    private function aggregateHourlyValues(array $rawValues): array
     {
         $result = [];
         // Raw values are hourly => No need for processing
@@ -246,33 +269,6 @@ class EntsoeAdapter extends DatabaseAdapter
             $result = $this->aggregateValues($rawValues, 1);
         }
         return $result;
-    }
-
-
-    /**
-     * Transforms XML time series to aggregated hourly array
-     */
-    protected function xmlTimeSeriesToHourlyValues(\SimpleXMLElement $xml, string $dataElementName): array
-    {
-        return $this->aggregateHourlyValues(
-            $this->xmlTimeSeriesToArray($xml, $dataElementName)
-        );
-    }
-
-
-    /**
-     * Returns current bidding zones based on given date by applying necessary changes
-     */
-    protected function getBiddingZones(\DateTimeImmutable $date): array
-    {
-        if ($date->getTimestamp() < strtotime('2018-01-01')) { 
-            $result = self::BIDDING_ZONES;
-            foreach (self::BIDDING_ZONES_CHANGES_PRE_2018 as $key => $value) {
-                $result[$key] = $value;
-            }
-            return $result;
-        }
-        return self::BIDDING_ZONES;
     }
 
 }
