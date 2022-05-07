@@ -2,7 +2,7 @@
 
 namespace DataCollector;
 
-class EntsoeAdapter extends DatabaseAdapter
+class EnergyAdapter extends DatabaseAdapter
 {
 
     protected string $apiUrl;
@@ -136,7 +136,6 @@ class EntsoeAdapter extends DatabaseAdapter
         foreach ($params as $key => $value) {
             $url .= "&$key=$value";
         }
-        echo "<p>$url</p>";
         $curl = curl_init($url);
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
         $xml = simplexml_load_string(curl_exec($curl));

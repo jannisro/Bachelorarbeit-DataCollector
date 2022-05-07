@@ -2,9 +2,9 @@
 
 namespace DataCollector\Energy;
 
-use DataCollector\EntsoeAdapter;
+use DataCollector\EnergyAdapter;
 
-class InstalledCapacity extends EntsoEAdapter
+class InstalledCapacity extends EnergyAdapter
 {
 
     private bool $dryRun;
@@ -29,7 +29,6 @@ class InstalledCapacity extends EntsoEAdapter
                 $this->storeResultInDatabase($response, $countryKey, $date);
             }
         }
-        echo 'Done';
     }
 
 

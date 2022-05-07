@@ -2,10 +2,10 @@
 
 namespace DataCollector\Energy;
 
-use DataCollector\EntsoEAdapter;
+use DataCollector\EnergyAdapter;
 use SimpleXMLElement;
 
-class CommercialFlow extends EntsoEAdapter
+class CommercialFlow extends EnergyAdapter
 {
 
     private bool $dryRun;
@@ -21,7 +21,6 @@ class CommercialFlow extends EntsoEAdapter
         foreach (parent::BORDER_RELATIONS as $country => $neighbors) {
             $this->storeDataOfCountry($country, $neighbors, $date);
         }
-        echo 'Done';
     }
 
 
@@ -67,9 +66,6 @@ class CommercialFlow extends EntsoEAdapter
         }
         elseif ($this->dryRun === true) {
             echo "<p>Commercial flow data from " . $date->format('Y-m-d') . " for border '$country1->$country2' would have been inserted into database (DryRun is activated)</p>";
-        }
-        else {
-            echo "<p>Failed to receive commercial flow data for border '$country1->$country2'</p>";
         }
     }
 

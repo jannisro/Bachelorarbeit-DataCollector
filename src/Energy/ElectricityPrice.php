@@ -2,9 +2,9 @@
 
 namespace DataCollector\Energy;
 
-use DataCollector\EntsoEAdapter;
+use DataCollector\EnergyAdapter;
 
-class ElectricityPrice extends EntsoEAdapter
+class ElectricityPrice extends EnergyAdapter
 {
 
     private bool $dryRun;
@@ -30,7 +30,6 @@ class ElectricityPrice extends EntsoEAdapter
                 $this->storeResultInDatabase($response, $countryKey, $date);
             }
         }
-        echo 'Done';
     }
 
 
@@ -52,9 +51,6 @@ class ElectricityPrice extends EntsoEAdapter
         }
         elseif ($this->dryRun === true) {
             echo "<p>Electricity price data from " . $date->format('Y-m-d') . " for country '$countryKey' would have been inserted into database (DryRun is activated)</p>";
-        }
-        else {
-            echo "<p>Failed to receive electricity price data for country '$countryKey'</p>";
         }
     }
 

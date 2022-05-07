@@ -2,9 +2,9 @@
 
 namespace DataCollector\Energy;
 
-use DataCollector\EntsoEAdapter;
+use DataCollector\EnergyAdapter;
 
-class ForecastedLoad extends EntsoEAdapter
+class ForecastedLoad extends EnergyAdapter
 {
 
     private bool $dryRun;
@@ -31,7 +31,6 @@ class ForecastedLoad extends EntsoEAdapter
                 $this->storeResultInDatabase($response, $countryKey, $date);
             }
         }
-        echo 'Done';
     }
 
 
@@ -52,9 +51,6 @@ class ForecastedLoad extends EntsoEAdapter
         }
         elseif ($this->dryRun === true) {
             echo "<p>Forecasted Load data from " . $date->format('Y-m-d') . " for country '$countryKey' would have been inserted into database (DryRun is activated)</p>";
-        }
-        else {
-            echo "<p>Failed to receive forecasted load data for country '$countryKey'</p>";
         }
     }
 

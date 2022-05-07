@@ -2,9 +2,9 @@
 
 namespace DataCollector\Energy;
 
-use DataCollector\EntsoEAdapter;
+use DataCollector\EnergyAdapter;
 
-class Generation extends EntsoEAdapter
+class Generation extends EnergyAdapter
 {
 
     private bool $dryRun;
@@ -30,7 +30,6 @@ class Generation extends EntsoEAdapter
                 $this->storeResultInDatabase($response, $countryKey, $date);
             }
         }
-        echo 'Done';
     }
 
 
@@ -55,9 +54,6 @@ class Generation extends EntsoEAdapter
         }
         elseif ($this->dryRun === true) {
             echo "<p>Generation data from " . $date->format('Y-m-d') . " for country '$countryKey' would have been inserted into database (DryRun is activated)</p>";
-        }
-        else {
-            echo "<p>Failed to receive generation data for country '$countryKey'</p>";
         }
     }
 

@@ -12,4 +12,4 @@ use Symfony\Component\Dotenv\Dotenv;
 $dotenv = new Dotenv();
 $dotenv->load(__DIR__ . '/../.env');
 
-(new DataCollector\Energy\CommercialFlow)(new DateTimeImmutable('2022-04-26'), true);
+echo __DIR__;

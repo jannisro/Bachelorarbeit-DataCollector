@@ -37,8 +37,8 @@ class DatabaseAdapter
 
     protected function runDbQuery(string $query): ?array
     {
-        $res = $this->db->query($this->db->real_escape_string($query));
-        return $res ? $res->fetch_assoc() : null;
+        $res = $this->db->query($query);
+        return $res ? $res->fetch_all(MYSQLI_ASSOC) : null;
     }
 
 }

@@ -5,7 +5,7 @@
 use DateTime;
 use DateTimeImmutable;
 
-class Outages extends EntsoEAdapter
+class Outages extends EnergyAdapter
 {
 
     private bool $dryRun;

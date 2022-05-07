@@ -2,9 +2,9 @@
 
 namespace DataCollector\Energy;
 
-use DataCollector\EntsoEAdapter;
+use DataCollector\EnergyAdapter;
 
-class NetTransferCapacity extends EntsoEAdapter
+class NetTransferCapacity extends EnergyAdapter
 {
 
     private bool $dryRun;
@@ -20,7 +20,6 @@ class NetTransferCapacity extends EntsoEAdapter
         foreach (parent::BORDER_RELATIONS as $country1 => $neighbors) {
             $this->storeCountryData($country1, $neighbors, $date);
         }
-        echo 'Done';
     }
 
 
@@ -113,9 +112,6 @@ class NetTransferCapacity extends EntsoEAdapter
         }
         elseif ($this->dryRun === true) {
             echo "<p>NTC data from " . $date->format('Y-m-d') . " for border '$country1->$country2' would have been inserted into database (DryRun is activated)</p>";
-        }
-        else {
-            echo "<p>Failed to receive NTC data for border '$country1->$country2'</p>";
         }
     }
 

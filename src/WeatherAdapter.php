@@ -1,18 +1,25 @@
 <?php
 
-namespace DataCollector\Weather;
-
-use DataCollector\DatabaseAdapter;
+namespace DataCollector;
 
 class WeatherAdapter extends DatabaseAdapter
 {
 
     /**
-     * Fetches hourly data for the next 48h and daily data for the next 7 days
-     * @param array $params Request parameters
-     * @return object|null Parsed JSON response or null at error 
+     * Returns all weather stations of all countries
      */
-    public function getForecast(array $params): ?object
+    public function getAllStations(): array
+    {
+        return $this->runDbQuery(
+            "SELECT `lat`, `lng`, `id` 
+            FROM `weather_stations`"
+        );
+    }
+
+    /**
+     * Fetches hourly data for the next 48h and daily data for the next 7 days
+     */
+    public function forecast(array $params): ?object
     {
         return $this->getApiResponse('/onecall', $params);
     }
@@ -20,20 +27,19 @@ class WeatherAdapter extends DatabaseAdapter
 
     /**
      * Fetches hourly data of the last 5 days
-     * @param array $params Request parameters
-     * @return object|null Parsed JSON response or null at error 
      */
-    public function getHistory(array $params): ?object
+    public function history(\DateTimeImmutable $date, float $lat, float $lng): ?object
     {
-        return $this->getApiResponse('/onecall/timemachine', $params);
+        return $this->getApiResponse('/onecall/timemachine', [
+            'lat' => $lat,
+            'lng' => $lng,
+            'date' => '?'
+        ]);
     }
 
 
     /**
      * Makes GET request to OpenWeather API and returns parsed JSON response
-     * @param string $endpoint The endpoint with a leading slash
-     * @param array $params All parameters which should be included
-     * @return object|null Parsed JSON response or null at error 
      */
     private function getApiResponse (string $endpoint, array $params): ?object
     {

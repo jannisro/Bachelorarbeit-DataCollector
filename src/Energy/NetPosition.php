@@ -2,9 +2,9 @@
 
 namespace DataCollector\Energy;
 
-use DataCollector\EntsoEAdapter;
+use DataCollector\EnergyAdapter;
 
-class NetPosition extends EntsoEAdapter
+class NetPosition extends EnergyAdapter
 {
 
     private bool $dryRun;
@@ -20,45 +20,49 @@ class NetPosition extends EntsoEAdapter
         foreach (parent::COUNTRIES as $countryKey => $country) {
             $this->calculateAndStoreNetPositions($countryKey, $date);
         }
-        echo 'Done';
     }
 
 
     private function calculateAndStoreNetPositions(string $country, \DateTimeImmutable $date): void
     {
-        $generation = $this->getHourlyData('generation', $country, $date);
-        $load = $this->getHourlyData('load', $country, $date);
+        $generation = $this->getHourlyGeneration($country, $date);
+        $load = $this->getHourlyLoad($country, $date);
         if ($generation && $load && $this->dryRun === false) {
             for ($i = 0; $i < 24; $i++) {
                 $this->insertIntoDb('electricity_net_positions', [
                     'country' => $country,
-                    'datetime' => $generation[$i]['datetime'],
-                    'value' => floatval($generation[$i]['value']) - floatval($load[$i]['value']),
-                    'created_at' => date('Y-m-d H:i')
+                    'datetime' => "{$date->format('Y-m-d')} $i:00",
+                    'value' => floatval($generation[$i]['totalGeneration']) - floatval($load[$i]['value']),
+                    'created_at' => date('Y-m-d H:i:s')
                 ]);
             }
         }
         elseif ($this->dryRun) {
             echo "<p>Net Position data of {$date->format('d.m.y')} for country $country would have been inserted</p>";
         }
-        else {
-            echo "<p>Net Position of {$date->format('d.m.y')} for country $country was not found</p>";
-        }
     }
 
 
-    private function getHourlyData(string $dataRow, string $country, \DateTimeImmutable $date): ?array
+    private function getHourlyLoad(string $country, \DateTimeImmutable $date): ?array
     {
-        $table = $dataRow === 'load' ? 'electricity_load' : 'electricity_generation';
-        print_r("SELECT * 
-        FROM `$table` 
-        WHERE `country`='$country' 
-            AND `datetime` LIKE '{$date->format('Y-m-d')}%'");
         return $this->runDbQuery(
-            "SELECT * 
-            FROM `$table` 
+            "SELECT `value`
+            FROM `electricity_load` 
             WHERE `country`='$country' 
-                AND `datetime` LIKE '{$date->format('Y-m-d')}%'"
+                AND `datetime` LIKE '{$date->format('Y-m-d')}%'
+            GROUP BY `datetime`"
+        );
+    }
+
+
+    private function getHourlyGeneration(string $country, \DateTimeImmutable $date): ?array
+    {
+        return $this->runDbQuery(
+            "SELECT SUM(`value`) AS `totalGeneration`
+            FROM `electricity_generation` 
+            WHERE `country`='$country' 
+                AND `datetime` LIKE '{$date->format('Y-m-d')}%'
+            GROUP BY `datetime`"
         );
     }
 

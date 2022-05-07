@@ -23,17 +23,19 @@ $availableClassnames = [
 ];
 
 
-if (isset($_GET['class']) && in_array($_GET['class'], $availableClassnames)) {
-    if (isset($_GET['date'])) {
-        $date =new \DateTimeImmutable($_GET['date']);
+if (isset($_GET['secret']) && in_array($_GET['secret'], $_ENV['APP_SECRET'])) {
+    if (isset($_GET['class']) && in_array($_GET['class'], $availableClassnames)) {
+        if (isset($_GET['date'])) {
+            $date = new \DateTimeImmutable($_GET['date']);
+        }
+        else {
+            $date = new DateTimeImmutable();
+        }
+    
+        $class = "DataCollector\\Energy\\{$_GET['class']}";
+        (new $class)($date, false);
     }
     else {
-        $date = new DateTimeImmutable();
+        echo "<h1>Invalid classname</h1>";
     }
-
-    $class = "DataCollector\\Energy\\{$_GET['class']}";
-    (new $class)($date, false);
-}
-else {
-    echo "<h1>Invalid classname</h1>";
 }

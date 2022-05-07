@@ -2,9 +2,9 @@
 
 namespace DataCollector\Energy;
 
-use DataCollector\EntsoEAdapter;
+use DataCollector\EnergyAdapter;
 
-class PhysicalFlow extends EntsoEAdapter
+class PhysicalFlow extends EnergyAdapter
 {
 
     private bool $dryRun;
@@ -20,7 +20,6 @@ class PhysicalFlow extends EntsoEAdapter
         foreach (parent::BORDER_RELATIONS as $country => $neighbors) {
             $this->storeDataOfCountry($country, $neighbors, $date);
         }
-        echo 'Done';
     }
 
 
@@ -66,9 +65,6 @@ class PhysicalFlow extends EntsoEAdapter
         }
         elseif ($this->dryRun === true) {
             echo "<p>physical flow data from " . $date->format('Y-m-d') . " for border '$country1->$country2' would have been inserted into database (DryRun is activated)</p>";
-        }
-        else {
-            echo "<p>Failed to receive physical flow data for border '$country1->$country2'</p>";
         }
     }
 
