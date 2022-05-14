@@ -27,6 +27,7 @@ if (isset($_GET['secret'], $_GET['date']) && $_GET['secret'] == $_ENV['APP_SECRE
     foreach ($classes as $class) {
         $call = "DataCollector\\Energy\\$class";
         (new $call)($date);
+        echo "<p>$call inserted</p>";
         sleep(10);
     }
 }

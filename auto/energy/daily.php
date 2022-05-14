@@ -25,6 +25,8 @@ $classes = [
 $date = new \DateTimeImmutable('-1 day');
 
 foreach ($classes as $class) {
-    (new $class)($date);
+    $call = "DataCollector\\Energy\\$class";
+    (new $call)($date);
+    echo "<p>$call inserted</p>";
     sleep(10);
 }
