@@ -14,7 +14,7 @@ class Generation extends EnergyAdapter
      * @param \DateTimeImmutable $date Date for which data should be queried
      * @param bool $dryRun true=No data is stored and method is run for test purposes
      */
-    public function __invoke(\DateTimeImmutable $date, bool $dryRun = false): void
+    public function __invoke(\DateTimeImmutable $date, ResultStoreHelper $resultStoreHelper, bool $dryRun = false): ResultStoreHelper
     {
         $this->dryRun = $dryRun;
         foreach (parent::COUNTRIES as $countryKey => $country) {
@@ -27,20 +27,22 @@ class Generation extends EnergyAdapter
                 'periodEnd' => $date->format('Ymd2300')
             ]);
             if (!is_null($response)) {
-                $this->storeResultInDatabase($response, $countryKey, $date);
+                $this->storeResultInDatabase($response, $countryKey, $date, $resultStoreHelper);
             }
         }
+        return $resultStoreHelper;
     }
 
 
-    private function storeResultInDatabase(\SimpleXMLElement $response, string $countryKey, \DateTimeImmutable $date): void
+    private function storeResultInDatabase(\SimpleXMLElement $response, string $countryKey, \DateTimeImmutable $date, ResultStoreHelper $resultStoreHelper): void
     {
         // When TimeSeries is present and dry run is deactivated
         if ($response->TimeSeries && $this->dryRun === false) {
             // Iterate through hourly values of each PSR and insert them into DB
             foreach ($this->psrTypesWithHourlyValues($response) as $psrName => $hourlyValues) {
-                $time = 0;
+                $time = $totalGeneration = 0;
                 foreach ($hourlyValues as $value) {
+                    $totalGeneration += floatval($value);
                     $this->insertIntoDb('electricity_generation', [
                         'country' => $countryKey,
                         'datetime' => $date->format('Y-m-d') . " $time:00",
@@ -51,6 +53,7 @@ class Generation extends EnergyAdapter
                     ++$time;
                 }
             }
+            $this->sumGeneration($countryKey, $date, $resultStoreHelper);
         }
         elseif ($this->dryRun === true) {
             echo "<p>Generation data from " . $date->format('Y-m-d') . " for country '$countryKey' would have been inserted into database (DryRun is activated)</p>";
@@ -106,6 +109,23 @@ class Generation extends EnergyAdapter
             $seriesIndex++;
         }
         return $result;
+    }
+
+
+    private function sumGeneration(string $country, \DateTimeImmutable $date, ResultStoreHelper $resultStoreHelper): void
+    {
+        $dateItems = $this->runDbQuery("SELECT `datetime`, SUM(`value`) AS `sum` 
+            FROM `electricity_generation` 
+            WHERE `country` = '{$country}'
+            AND `datetime` LIKE '{$date->format('Y-m-d')}%'
+            GROUP BY `datetime`");
+        foreach ($dateItems as $item) {
+            $resultStoreHelper->addNationalValue(
+                new \DateTimeImmutable($item['datetime']),
+                $country,
+                ['total_generation', $item['sum']]
+            );
+        }
     }
 
 }

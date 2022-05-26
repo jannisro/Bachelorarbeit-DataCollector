@@ -41,4 +41,10 @@ class DatabaseAdapter
         return $res ? $res->fetch_all(MYSQLI_ASSOC) : null;
     }
 
+
+    protected function runDbMultiQuery(string $query): bool
+    {
+        return $this->db->multi_query($query);
+    }
+
 }

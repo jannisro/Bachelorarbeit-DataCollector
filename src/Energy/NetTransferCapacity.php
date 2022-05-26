@@ -14,26 +14,27 @@ class NetTransferCapacity extends EnergyAdapter
      * @param \DateTimeImmutable $date Date for which data should be queried
      * @param bool $dryRun true=No data is stored and method is run for test purposes
      */
-    public function __invoke(\DateTimeImmutable $date, bool $dryRun = false): void
+    public function __invoke(\DateTimeImmutable $date, ResultStoreHelper $resultStoreHelper, bool $dryRun = false): ResultStoreHelper
     {
         $this->dryRun = $dryRun;
         foreach (parent::BORDER_RELATIONS as $country1 => $neighbors) {
-            $this->storeCountryData($country1, $neighbors, $date);
+            $this->storeCountryData($country1, $neighbors, $date, $resultStoreHelper);
         }
+        return $resultStoreHelper;
     }
 
 
     /**
      * Stores data of all borders of a countries
      */
-    private function storeCountryData(string $originCountry, array $neighbors, \DateTimeImmutable $date): void
+    private function storeCountryData(string $originCountry, array $neighbors, \DateTimeImmutable $date, ResultStoreHelper $resultStoreHelper): void
     {
         foreach ($neighbors as $targetCountry) {
             $this->storeBorderRelationData(
                 $this->getHourlyValuesOfBorderRelation($originCountry, $targetCountry, $date),
-                $originCountry,
-                $targetCountry,
-                $date
+                [$originCountry, $targetCountry],
+                $date,
+                $resultStoreHelper
             );
         }
     }
@@ -94,24 +95,22 @@ class NetTransferCapacity extends EnergyAdapter
     /**
      * Stores hourly values of country->country in database
      */
-    private function storeBorderRelationData(array $hourlyValues, string $country1, string $country2, \DateTimeImmutable $date): void
+    private function storeBorderRelationData(array $hourlyValues, array $countries, \DateTimeImmutable $date, ResultStoreHelper $resultStoreHelper): void
     {
         // When TimeSeries is present and dry run is deactivated
         if (array_sum($hourlyValues) > 0 && $this->dryRun === false) {
             $time = 0;
             foreach ($hourlyValues as $hourlyValue) {
-                $this->insertIntoDb("electricity_net_transfer_capacities", [
-                    'country_start' => $country1,
-                    'country_end' => $country2,
-                    'datetime' => $date->format('Y-m-d') . " $time:00",
-                    'value' => $hourlyValue,
-                    'created_at' => date('Y-m-d H:i:s')
-                ]);
+                $resultStoreHelper->addInternationalValue(
+                    new \DateTimeImmutable($date->format('Y-m-d') . " $time:00"), 
+                    $countries,
+                    ['net_transfer_capacity', $hourlyValue]
+                );
                 ++$time;
             }
         }
         elseif ($this->dryRun === true) {
-            echo "<p>NTC data from " . $date->format('Y-m-d') . " for border '$country1->$country2' would have been inserted into database (DryRun is activated)</p>";
+            echo "<p>NTC data from " . $date->format('Y-m-d') . " for border '{$countries[0]}->{$countries[1]}' would have been inserted into database (DryRun is activated)</p>";
         }
     }
 
