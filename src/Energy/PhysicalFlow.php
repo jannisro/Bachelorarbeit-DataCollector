@@ -14,25 +14,24 @@ class PhysicalFlow extends EnergyAdapter
      * @param \DateTimeImmutable $date Date for which data should be queried
      * @param bool $dryRun true=No data is stored and method is run for test purposes
      */
-    public function __invoke(\DateTimeImmutable $date, ResultStoreHelper $resultStoreHelper, bool $dryRun = false): ResultStoreHelper
+    public function __invoke(\DateTimeImmutable $date, bool $dryRun = false): void
     {
         $this->dryRun = $dryRun;
         foreach (parent::BORDER_RELATIONS as $country => $neighbors) {
-            $this->storeDataOfCountry($country, $neighbors, $date,  $resultStoreHelper);
+            $this->storeDataOfCountry($country, $neighbors, $date);
         }
-        return $resultStoreHelper;
     }
 
 
-    private function storeDataOfCountry(string $originCountry, array $neighbors, \DateTimeImmutable $date, ResultStoreHelper $resultStoreHelper): void
+    private function storeDataOfCountry(string $originCountry, array $neighbors, \DateTimeImmutable $date): void
     {
         foreach ($neighbors as $targetCountry) {
-            $this->storeDataOfBorderRelation([$originCountry, $targetCountry], $date, $resultStoreHelper);
+            $this->storeDataOfBorderRelation([$originCountry, $targetCountry], $date);
         }
     }
 
 
-    private function storeDataOfBorderRelation(array $countries, \DateTimeImmutable $date, ResultStoreHelper $resultStoreHelper): void
+    private function storeDataOfBorderRelation(array $countries, \DateTimeImmutable $date): void
     {
         $response = $this->makeGetRequest([
             'documentType' => 'A11',
@@ -42,22 +41,25 @@ class PhysicalFlow extends EnergyAdapter
             'periodEnd' => $date->format('Ymd2200')
         ]);
         if (!is_null($response)) {
-            $this->storeResultInDatabase($response, $countries, $date, $resultStoreHelper);
+            $this->storeResultInDatabase($response, $countries, $date);
         }
     }
 
 
-    private function storeResultInDatabase(\SimpleXMLElement $response, array $countries, \DateTimeImmutable $date, ResultStoreHelper $resultStoreHelper): void
+    private function storeResultInDatabase(\SimpleXMLElement $response, array $countries, \DateTimeImmutable $date): void
     {
         // When TimeSeries is present and dry run is deactivated
         if ($response->TimeSeries && $this->dryRun === false) {
             // Iterate through hourly values of each PSR and insert them into DB
             $time = 0;
             foreach ($this->xmlTimeSeriesToHourlyValues($response, 'quantity') as $hourlyValue) {
-                $resultStoreHelper->addInternationalValue(
-                    new \DateTimeImmutable($date->format('Y-m-d') . " $time:00"), 
-                    $countries,
-                    ['physical_flow', $hourlyValue]
+                $dt = $date->format('Y-m-d') . " $time:00:00";
+                $created = date('Y-m-d H:i:s');
+                $this->runDbMultiQuery(
+                    "INSERT INTO `electricity_history_international` 
+                    (`id`, `datetime`, `start_country`, `end_country`, `physical_flow`, `created_at`)
+                    VALUES ('', '$dt', '{$countries[0]}', '{$countries[1]}', '$hourlyValue', '$created')
+                    ON DUPLICATE KEY UPDATE `physical_flow`='$hourlyValue'"
                 );
                 ++$time;
             }

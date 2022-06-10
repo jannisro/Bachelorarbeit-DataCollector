@@ -12,7 +12,7 @@ class ElectricityPrice extends EnergyAdapter
     /**
      * Requests and stores elctricity prices of all countries (of the first bidding zone in mapping)
      */
-    public function __invoke(\DateTimeImmutable $date, ResultStoreHelper $resultStoreHelper, bool $dryRun = false): ResultStoreHelper
+    public function __invoke(\DateTimeImmutable $date, bool $dryRun = false): void
     {
         $this->dryRun = $dryRun;
         foreach ($this->getBiddingZones($date) as $countryKey => $biddingZones) {
@@ -25,25 +25,29 @@ class ElectricityPrice extends EnergyAdapter
                 'periodEnd' => $date->format('Ymd2200')
             ]);
             if (!is_null($response)) {
-                $this->storeResultInDatabase($response, $countryKey, $date, $resultStoreHelper);
+                $this->storeResultInDatabase($response, $countryKey, $date);
             }
         }
-        return $resultStoreHelper;
     }
 
 
-    private function storeResultInDatabase(\SimpleXMLElement $response, string $countryKey, \DateTimeImmutable $date, ResultStoreHelper $resultStoreHelper): void
+    private function storeResultInDatabase(\SimpleXMLElement $response, string $countryKey, \DateTimeImmutable $date): void
     {
         // When TimeSeries is present and dry run is deactivated
         if ($response->TimeSeries && $this->dryRun === false) {
             // Iterate through hourly values and insert them into DB
             $time = 0;
             foreach ($this->xmlTimeSeriesToHourlyValues($response, 'price.amount') as $hourlyValue) {
-                $resultStoreHelper->addNationalValue(
-                    new \DateTimeImmutable($date->format('Y-m-d') . " $time:00"), 
-                    $countryKey, ['price', 
-                    $hourlyValue]
+                $dt = $date->format('Y-m-d') . " $time:00:00";
+                $created = date('Y-m-d H:i:s');
+                $b = $this->runDbMultiQuery(
+                    "INSERT INTO `electricity_history_national` 
+                    (`id`, `datetime`, `country`, `price`, `created_at`)
+                    VALUES ('', '$dt', '$countryKey', '$hourlyValue', '$created')
+                    ON DUPLICATE KEY UPDATE `price`='$hourlyValue'"
                 );
+                if (!$b) throw new \Exception( "INSERT INTO `electricity_history_national` (`id`, `datetime`, `country`, `price`, `created_at`) VALUES ('', '$dt', '$countryKey', '$hourlyValue') ON DUPLICATE KEY UPDATE `price`='$hourlyValue' failed");
+                else echo 'Suceeded';
                 ++$time;
             }
         }

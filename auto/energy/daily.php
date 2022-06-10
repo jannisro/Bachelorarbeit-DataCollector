@@ -2,7 +2,6 @@
 
 require __DIR__ . '/../../vendor/autoload.php';
 
-use DataCollector\Energy\ElectricityPrice;
 use DataCollector\Energy\ResultStoreHelper;
 use Symfony\Component\Dotenv\Dotenv;
 
@@ -23,13 +22,13 @@ $classes = [
 ];
 
 $date = new \DateTimeImmutable('-1 day');
-$resultStoreHelper = new ResultStoreHelper;
 
 foreach ($classes as $class) {
     $call = "DataCollector\\Energy\\$class";
-    (new $call)($date, $resultStoreHelper);
-    echo "<p>$call inserted</p>";
-    sleep(10);
+    (new $call)($date);
+    echo "$call inserted... \n";
+    sleep(5);
 }
 
-$resultStoreHelper->storeValues();
+(new DataCollector\Energy\NetPosition)($date);
+echo 'Net Position inserted...';

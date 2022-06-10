@@ -2,8 +2,11 @@
 
 require __DIR__ . '/../vendor/autoload.php';
 
-use DataCollector\Energy\ResultStoreHelper;
 use Symfony\Component\Dotenv\Dotenv;
+
+ini_set('display_errors', 1); 
+ini_set('display_startup_errors', 1); 
+error_reporting(E_ALL);
 
 
 // Parse .env file with configuration
@@ -24,14 +27,17 @@ $classes = [
 
 if (isset($_GET['secret'], $_GET['date']) && $_GET['secret'] == $_ENV['APP_SECRET']) {
     $date = new \DateTimeImmutable($_GET['date']);
-    $resultStoreHelper = new ResultStoreHelper;
+
     foreach ($classes as $class) {
         $call = "DataCollector\\Energy\\$class";
-        (new $call)($date, $resultStoreHelper);
-        echo "<p>$call inserted</p>";
-        sleep(10);
+        (new $call)($date);
+        echo "$call inserted... <br/>";
+        sleep(5);
     }
-    $resultStoreHelper->storeValues();
+    
+    (new DataCollector\Energy\NetPosition)($date);
+    echo 'Net Position inserted...';
+
 }
 else {
     echo '<p>Valid parameters and secret must be passed</p>';

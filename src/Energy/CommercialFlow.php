@@ -12,25 +12,24 @@ class CommercialFlow extends EnergyAdapter
     /**
      * Requests and stores commercial flows of all border relations
      */
-    public function __invoke(\DateTimeImmutable $date, ResultStoreHelper $resultStoreHelper, bool $dryRun = false): ResultStoreHelper
+    public function __invoke(\DateTimeImmutable $date, bool $dryRun = false): void
     {
         $this->dryRun = $dryRun;
         foreach (parent::BORDER_RELATIONS as $country => $neighbors) {
-            $this->storeDataOfCountry($country, $neighbors, $date, $resultStoreHelper);
+            $this->storeDataOfCountry($country, $neighbors, $date);
         }
-        return $resultStoreHelper;
     }
 
 
-    private function storeDataOfCountry(string $originCountry, array $neighbors, \DateTimeImmutable $date, ResultStoreHelper $resultStoreHelper): void
+    private function storeDataOfCountry(string $originCountry, array $neighbors, \DateTimeImmutable $date): void
     {
         foreach ($neighbors as $targetCountry) {
-            $this->storeDataOfBorderRelation([$originCountry, $targetCountry], $date, $resultStoreHelper);
+            $this->storeDataOfBorderRelation([$originCountry, $targetCountry], $date);
         }
     }
 
 
-    private function storeDataOfBorderRelation(array $countries, \DateTimeImmutable $date, ResultStoreHelper $resultStoreHelper): void
+    private function storeDataOfBorderRelation(array $countries, \DateTimeImmutable $date): void
     {
         $response = $this->makeGetRequest([
             'documentType' => 'A09',
@@ -40,21 +39,23 @@ class CommercialFlow extends EnergyAdapter
             'periodEnd' => $date->format('Ymd2200')
         ]);
         if (!is_null($response)) {
-            $this->storeResultInDatabase($response, $countries, $date, $resultStoreHelper);
+            $this->storeResultInDatabase($response, $countries, $date);
         }
     }
 
 
-    private function storeResultInDatabase(\SimpleXMLElement $response, array $countries, \DateTimeImmutable $date, ResultStoreHelper $resultStoreHelper): void
+    private function storeResultInDatabase(\SimpleXMLElement $response, array $countries, \DateTimeImmutable $date): void
     {
         // When TimeSeries is present and dry run is deactivated
         if ($response->TimeSeries && $this->dryRun === false) {
             $time = 0;
             foreach ($this->xmlTimeSeriesToHourlyValues($response, 'quantity') as $hourlyValue) {
-                $resultStoreHelper->addInternationalValue(
-                    new \DateTimeImmutable($date->format('Y-m-d') . " $time:00"), 
-                    $countries, 
-                    ['commercial_flow', $hourlyValue]
+                $dt = $date->format('Y-m-d') . " $time:00:00";
+                $this->runDbMultiQuery(
+                    "INSERT INTO `electricity_history_international` 
+                    (`id`, `datetime`, `start_country`, `end_country`, `commercial_flow`, `created_at`)
+                    VALUES ('', '$dt', '{$countries[0]}', '{$countries[1]}', '$hourlyValue', '{date('Y-m-d H:i:s')}')
+                    ON DUPLICATE KEY UPDATE `commercial_flow`='$hourlyValue'"
                 );
                 ++$time;
             }
