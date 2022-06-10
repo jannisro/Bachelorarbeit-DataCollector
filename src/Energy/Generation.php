@@ -18,96 +18,45 @@ class Generation extends EnergyAdapter
     {
         $this->dryRun = $dryRun;
         foreach (parent::COUNTRIES as $countryKey => $country) {
-            // Fetch data of date
-            $response = $this->makeGetRequest([
-                'documentType' => 'A75',
-                'processType' => 'A16',
-                'in_domain' => $country,
-                'periodStart' => \DateTime::createFromImmutable($date)->modify('-1 day')->format('Ymd2300'),
-                'periodEnd' => $date->format('Ymd2300')
-            ]);
-            if (!is_null($response)) {
-                $this->storeResultInDatabase($response, $countryKey, $date);
-            }
-        }
-    }
-
-
-    private function storeResultInDatabase(\SimpleXMLElement $response, string $countryKey, \DateTimeImmutable $date): void
-    {
-        // When TimeSeries is present and dry run is deactivated
-        if ($response->TimeSeries && $this->dryRun === false) {
-            // Iterate through hourly values of each PSR and insert them into DB
-            foreach ($this->psrTypesWithHourlyValues($response) as $psrName => $hourlyValues) {
-                $time = $totalGeneration = 0;
-                foreach ($hourlyValues as $value) {
-                    $totalGeneration += floatval($value);
-                    $this->insertIntoDb('electricity_generation', [
-                        'country' => $countryKey,
-                        'datetime' => $date->format('Y-m-d') . " $time:00",
-                        'psr_type' => $psrName,
-                        'value' => $value,
-                        'created_at' => date('Y-m-d H:i:s')
-                    ]);
-                    ++$time;
+            foreach (parent::PSR_TYPES as $psrCode) {
+                // Fetch data of date
+                $response = $this->makeGetRequest([
+                    'documentType' => 'A75',
+                    'processType' => 'A16',
+                    'psrType' => $psrCode,
+                    'in_domain' => $country,
+                    'periodStart' => \DateTime::createFromImmutable($date)->modify('-1 day')->format('Ymd2300'),
+                    'periodEnd' => $date->format('Ymd2300')
+                ]);
+                if (!is_null($response)) {
+                    $this->storeResultInDatabase($psrCode, $response, $countryKey, $date);
                 }
             }
             $this->sumGeneration($countryKey, $date);
         }
+    }
+
+
+    private function storeResultInDatabase(string $psrCode, \SimpleXMLElement $response, string $countryKey, \DateTimeImmutable $date): void
+    {
+        // When TimeSeries is present and dry run is deactivated
+        if ($response->TimeSeries && $this->dryRun === false) {
+            // Iterate through hourly values of each PSR and insert them into DB
+            $time = 0;
+            foreach ($this->xmlTimeSeriesToHourlyValues($response, 'quantity') as $hourlyValue) {
+                $dt = $date->format('Y-m-d') . " $time:00:00";
+                $created = date('Y-m-d H:i:s');
+                $this->runDbMultiQuery(
+                    "INSERT INTO `electricity_generation` 
+                    (`id`, `datetime`, `country`, `psr_type`, `value`, `created_at`)
+                    VALUES ('', '$dt', '$countryKey', '$psrCode', '$hourlyValue', '$created')"
+                );
+                ++$time;
+            }
+        }
         elseif ($this->dryRun === true) {
             echo "<p>Generation data from " . $date->format('Y-m-d') . " for country '$countryKey' would have been inserted into database (DryRun is activated)</p>";
         }
-    }
-
-
-    /**
-     * Returns hourly values of each PSR type ([psr1 => [hourlyValues], psr2 => [hourlyValues], ...])
-     */
-    private function psrTypesWithHourlyValues(\SimpleXMLElement $xml): array
-    {
-        $result = [];
-        foreach ($this->psrTypesWithRawValues($xml) as $psrName => $rawValues) {
-            // Raw values are hourly => No need for processing
-            if (count($rawValues) === 24) {
-                $result[$psrName] = $rawValues;
-            }
-            // Raw values are quarter hourly => Aggregate to hourly
-            else if (count($rawValues) === 96) {
-                $result[$psrName] = $this->aggregateValues($rawValues, 4);
-            }
-            // Raw values are half hourly => Aggregate to hourly
-            else if (count($rawValues) === 48) {
-                $result[$psrName] = $this->aggregateValues($rawValues, 2);
-            }
-            // Incomplete dataset => Process anyway to keep existing data
-            else if (count($rawValues) < 24) {
-                $result[$psrName] = $this->aggregateValues($rawValues, 1);
-            }
-        }
-        return $result;
-    }
-
-
-    /**
-     * Parses XML response to an array of format [psr1 => [values], psr2 => [values]]
-     */
-    private function psrTypesWithRawValues(\SimpleXMLElement $xml): array
-    {
-        $result = [];
-        // Iterate over TimeSeries
-        $seriesIndex = 0;
-        while ($series = $xml->TimeSeries[$seriesIndex]) {
-            $psr = $series->MktPSRType->psrType->__toString();
-            $result[$psr] = [];
-            // Iiterate over Points in TimeSeries
-            $pointIndex = 0;
-            while ($point = $series->Period->Point[$pointIndex]) {
-                $result[$psr][] = floatval($point->quantity->__toString());
-                $pointIndex++;
-            }
-            $seriesIndex++;
-        }
-        return $result;
     }
 
 

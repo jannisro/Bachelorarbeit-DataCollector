@@ -2,7 +2,6 @@
 
 require __DIR__ . '/../../vendor/autoload.php';
 
-use DataCollector\Energy\ResultStoreHelper;
 use Symfony\Component\Dotenv\Dotenv;
 
 
@@ -12,13 +11,9 @@ $dotenv->load(__DIR__ . '/../../.env');
 
 
 $classes = [
-    "ElectricityPrice",
-    "CommercialFlow",
-    "PhysicalFlow",
     "Generation",
     "Load",
-    "ForecastedLoad",
-    "NetTransferCapacity"
+    "ForecastedLoad"
 ];
 
 $date = new \DateTimeImmutable('-1 day');
@@ -29,6 +24,3 @@ foreach ($classes as $class) {
     echo "$call inserted... \n";
     sleep(5);
 }
-
-(new DataCollector\Energy\NetPosition)($date);
-echo 'Net Position inserted...';

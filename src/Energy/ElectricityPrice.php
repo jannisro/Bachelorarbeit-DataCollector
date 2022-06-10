@@ -46,8 +46,6 @@ class ElectricityPrice extends EnergyAdapter
                     VALUES ('', '$dt', '$countryKey', '$hourlyValue', '$created')
                     ON DUPLICATE KEY UPDATE `price`='$hourlyValue'"
                 );
-                if (!$b) throw new \Exception( "INSERT INTO `electricity_history_national` (`id`, `datetime`, `country`, `price`, `created_at`) VALUES ('', '$dt', '$countryKey', '$hourlyValue') ON DUPLICATE KEY UPDATE `price`='$hourlyValue' failed");
-                else echo 'Suceeded';
                 ++$time;
             }
         }
