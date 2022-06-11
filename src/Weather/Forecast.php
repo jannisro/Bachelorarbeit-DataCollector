@@ -75,6 +75,7 @@ class Forecast extends \DataCollector\WeatherAdapter
     {
         $this->insertIntoDb('weather_daylight_hours_forecast', [
             'station_id' => $station['id'],
+            'country' => $station['country'],
             'date' => date('Y-m-d', intval($currentData->dt)),
             'sunrise' => date('Y-m-d H:i', intval($currentData->sunrise)),
             'sunset' => date('Y-m-d H:i', intval($currentData->sunset)),
@@ -88,6 +89,7 @@ class Forecast extends \DataCollector\WeatherAdapter
         foreach ($hourlyData as $item) {
             $this->insertIntoDb('weather_points_forecast', [
                 'station_id' => $station['id'],
+                'country' => $station['country'],
                 'datetime' => date('Y-m-d H:i', intval($item->dt)),
                 'temperature' => floatval($item->temp),
                 'wind' => floatval($item->wind_speed),
