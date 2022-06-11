@@ -25,12 +25,13 @@ class Generation extends EnergyAdapter
                     'processType' => 'A16',
                     'psrType' => $psrCode,
                     'in_domain' => $country,
-                    'periodStart' => \DateTime::createFromImmutable($date)->modify('-1 day')->format('Ymd2300'),
-                    'periodEnd' => $date->format('Ymd2300')
+                    'periodStart' => \DateTime::createFromImmutable($date)->modify('-1 day')->format('Ymd2200'),
+                    'periodEnd' => $date->format('Ymd2200')
                 ]);
                 if (!is_null($response)) {
                     $this->storeResultInDatabase($psrCode, $response, $countryKey, $date);
                 }
+                sleep(2); # Prevent too many requests to the EntsoE
             }
             $this->sumGeneration($countryKey, $date);
         }
@@ -43,8 +44,8 @@ class Generation extends EnergyAdapter
         if ($response->TimeSeries && $this->dryRun === false) {
             // Iterate through hourly values of each PSR and insert them into DB
             $time = 0;
-            foreach ($this->xmlTimeSeriesToHourlyValues($response, 'quantity') as $hourlyValue) {
-                $dt = $date->format('Y-m-d') . " $time:00:00";
+            foreach ($this->xmlTimeSeriesToHourlyValues($response, 'quantity', 0) as $hourlyValue) {
+                $dt = $date->format('Y-m-d') . " $time:00";
                 $created = date('Y-m-d H:i:s');
                 $this->runDbMultiQuery(
                     "INSERT INTO `electricity_generation` 

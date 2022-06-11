@@ -176,50 +176,6 @@ class EnergyAdapter extends DatabaseAdapter
 
 
     /**
-     * Checks whether the datbase already contains data for a given country and date
-     */
-    protected function isDataNotPresent(string $tableName, string $countryKey, string $date): bool
-    {
-        $res = $this->getDb()->query(
-            "SELECT * 
-            FROM `$tableName` 
-            WHERE `country` = '$countryKey' 
-                AND `datetime` LIKE '$date%'"
-        );
-        return $res && $res->num_rows === 0;
-    }
-
-
-    /**
-     * Sums up each n elements in an array of 24 items
-     */
-    protected function aggregateValues(array $values, int $elementsToUnite): array {
-        $result = array_fill(0, 24, 0);
-        $currentIndexInResult = $currentlyUnitedElements = 0;
-        foreach ($values as $value) {
-            $result[$currentIndexInResult] += $value;
-            if (++$currentlyUnitedElements === $elementsToUnite) {
-                ++$currentIndexInResult;
-                $currentlyUnitedElements = 0;
-                $result[$currentIndexInResult-1] = $result[$currentIndexInResult-1] / $elementsToUnite;
-            }
-        }
-        return $result;
-    }
-
-
-    /**
-     * Transforms XML time series to aggregated hourly array
-     */
-    protected function xmlTimeSeriesToHourlyValues(\SimpleXMLElement $xml, string $dataElementName, int $timeSeriesIndex = 0): array
-    {
-        return $this->aggregateHourlyValues(
-            $this->xmlTimeSeriesPeriodsToArray($xml, $dataElementName, $timeSeriesIndex)
-        );
-    }
-
-
-    /**
      * Returns current bidding zones based on given date by applying necessary changes
      */
     protected function getBiddingZones(\DateTimeImmutable $date): array
@@ -236,16 +192,27 @@ class EnergyAdapter extends DatabaseAdapter
 
 
     /**
+     * Transforms XML time series to aggregated hourly array
+     */
+    protected function xmlTimeSeriesToHourlyValues(\SimpleXMLElement $xml, string $dataElementName, int $timeSeriesIndex = 0): array
+    {
+        return $this->aggregateHourlyValues(
+            $this->xmlTimeSeriesPeriodsToArray($xml, $dataElementName, $timeSeriesIndex)
+        );
+    }
+
+
+    /**
      * Transforms XML time series data to array
      */
-    private function xmlTimeSeriesPeriodsToArray(\SimpleXMLElement $xml, string $dataElementName, int $timeSeriesIndex): array
+    private function xmlTimeSeriesPeriodsToArray(\SimpleXMLElement $xml, string $dataElementName, int $timeSeriesIndex = 0): array
     {
         $result = [];
         // Iiterate over Points in TimeSeries
         $pointIndex = 0;
         while ($point = $xml->TimeSeries[$timeSeriesIndex]->Period->Point[$pointIndex]) {
             $result[] = floatval($point->{$dataElementName}->__toString());
-            $pointIndex++;
+            ++$pointIndex;
         }
         return $result;
     }
@@ -272,6 +239,18 @@ class EnergyAdapter extends DatabaseAdapter
         // Incomplete dataset => Process anyway to keep existing data
         else if (count($rawValues) < 24) {
             $result = $this->aggregateValues($rawValues, 1);
+        }
+        return $result;
+    }
+
+
+    /**
+     * Sums up each n elements of an array and put them in an array of 24 items
+     */
+    protected function aggregateValues(array $values, int $elementsToUnite): array {
+        $result = array_fill(0, 24, 0);
+        foreach (array_chunk($values, $elementsToUnite) as $index => $chunk) {
+            $result[$index] = array_sum($chunk);
         }
         return $result;
     }

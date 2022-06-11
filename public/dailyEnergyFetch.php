@@ -32,7 +32,7 @@ if (isset($_GET['secret'], $_GET['date']) && $_GET['secret'] == $_ENV['APP_SECRE
         $call = "DataCollector\\Energy\\$class";
         (new $call)($date);
         echo "$call inserted... <br/>";
-        sleep(10);
+        sleep(15);
     }
     
     (new DataCollector\Energy\NetPosition)($date);

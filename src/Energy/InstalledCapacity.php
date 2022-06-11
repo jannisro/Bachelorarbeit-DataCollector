@@ -66,7 +66,7 @@ class InstalledCapacity extends EnergyAdapter
         while ($series = $xml->TimeSeries[$seriesIndex]) {
             $psr = $series->MktPSRType->psrType->__toString();
             $result[$psr] = intval($series->Period->Point->quantity->__toString());
-            $seriesIndex++;
+            ++$seriesIndex;
         }
         return $result;
     }
