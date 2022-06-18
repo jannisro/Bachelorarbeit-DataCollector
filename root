@@ -36,3 +36,7 @@
 00 03 * * * /usr/bin/php /usr/share/nginx/html/auto/dailyMeanValues.php > /home/cronlog/`date +\%Y-\%m-\%d-\%H:\%M`-cron.log 2>&1 ; mailx -s "Mean values run successfully" jannis.rohden@yahoo.de
 # Yearly energy job at 02:00 each January 1st
 * 02 1 01 * /usr/bin/php /usr/share/nginx/html/auto/energy/yearly.php > /home/cronlog/`date +\%Y-\%m-\%d-\%H:\%M`-cron.log 2>&1 ; mailx -s "Installed capacity run successfully" jannis.rohden@yahoo.de
+
+
+# Hourly data fetch
+* * * * * /usr/bin/php /usr/share/nginx/html/auto/energy/hourly.php > /home/cronlog/`date +\%Y-\%m-\%d-\%H:\%M`-cron.log 2>&1 ; mailx -s "Hourly run successfully" jannis.rohden@yahoo.de

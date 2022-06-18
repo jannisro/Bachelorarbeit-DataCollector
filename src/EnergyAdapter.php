@@ -250,7 +250,7 @@ class EnergyAdapter extends DatabaseAdapter
     protected function aggregateValues(array $values, int $elementsToUnite): array {
         $result = array_fill(0, 24, 0);
         foreach (array_chunk($values, $elementsToUnite) as $index => $chunk) {
-            $result[$index] = array_sum($chunk);
+            $result[$index] = array_sum($chunk)/$elementsToUnite;
         }
         return $result;
     }
