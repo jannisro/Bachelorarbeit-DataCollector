@@ -17,12 +17,13 @@ class HistoryFetch extends DatabaseAdapter
     {
         $minDate = $this->runDbQuery(
             "SELECT `datetime` 
-            FROM `electricity_history_national` 
+            FROM `electricity_generation` 
             ORDER BY `datetime` ASC 
             LIMIT 1"
         )[0]['datetime'];
         $dt = (new \DateTime($minDate))->modify('-1 day');
         if ($dt) {
+            echo 'Collect data for ' . $dt->format('Y-m-d');
             $classes = [
                 "ElectricityPrice",
                 "CommercialFlow",
@@ -42,3 +43,5 @@ class HistoryFetch extends DatabaseAdapter
     }
 
 }
+
+(new HistoryFetch)();
