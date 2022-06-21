@@ -7,16 +7,12 @@ use DataCollector\EnergyAdapter;
 class PhysicalFlow extends EnergyAdapter
 {
 
-    private bool $dryRun;
-
     /**
      * Requests and stores physical flows of all border relations
      * @param \DateTimeImmutable $date Date for which data should be queried
-     * @param bool $dryRun true=No data is stored and method is run for test purposes
      */
-    public function __invoke(\DateTimeImmutable $date, bool $dryRun = false): void
+    public function __invoke(\DateTimeImmutable $date): void
     {
-        $this->dryRun = $dryRun;
         foreach (parent::BORDER_RELATIONS as $country => $neighbors) {
             $this->storeDataOfCountry($country, $neighbors, $date);
         }
@@ -48,8 +44,7 @@ class PhysicalFlow extends EnergyAdapter
 
     private function storeResultInDatabase(\SimpleXMLElement $response, array $countries, \DateTimeImmutable $date): void
     {
-        // When TimeSeries is present and dry run is deactivated
-        if ($response->TimeSeries && $this->dryRun === false) {
+        if ($response->TimeSeries) {
             // Iterate through hourly values of each PSR and insert them into DB
             $time = 0;
             foreach ($this->xmlTimeSeriesToHourlyValues($response, 'quantity') as $hourlyValue) {
@@ -63,9 +58,6 @@ class PhysicalFlow extends EnergyAdapter
                 );
                 ++$time;
             }
-        }
-        elseif ($this->dryRun === true) {
-            echo "<p>physical flow data from " . $date->format('Y-m-d') . " for border '{$countries[0]}->{$countries[1]}' would have been inserted into database (DryRun is activated)</p>";
         }
     }
 

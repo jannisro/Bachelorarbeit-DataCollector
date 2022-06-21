@@ -7,16 +7,12 @@ use DataCollector\EnergyAdapter;
 class Generation extends EnergyAdapter
 {
 
-    private bool $dryRun;
-
     /**
      * Requests and stores elctricity generation of all countries, identified by PSR type
      * @param \DateTimeImmutable $date Date for which data should be queried
-     * @param bool $dryRun true=No data is stored and method is run for test purposes
      */
-    public function __invoke(\DateTimeImmutable $date, bool $dryRun = false): void
+    public function __invoke(\DateTimeImmutable $date): void
     {
-        $this->dryRun = $dryRun;
         foreach (parent::COUNTRIES as $countryKey => $country) {
             foreach (parent::PSR_TYPES as $psrCode) {
                 // Fetch data of date
@@ -40,8 +36,7 @@ class Generation extends EnergyAdapter
 
     private function storeResultInDatabase(string $psrCode, \SimpleXMLElement $response, string $countryKey, \DateTimeImmutable $date): void
     {
-        // When TimeSeries is present and dry run is deactivated
-        if ($response->TimeSeries && $this->dryRun === false) {
+        if ($response->TimeSeries) {
             // Iterate through hourly values of each PSR and insert them into DB
             $time = 0;
             foreach ($this->xmlTimeSeriesToHourlyValues($response, 'quantity', 0) as $hourlyValue) {
@@ -55,9 +50,6 @@ class Generation extends EnergyAdapter
                 );
                 ++$time;
             }
-        }
-        elseif ($this->dryRun === true) {
-            echo "<p>Generation data from " . $date->format('Y-m-d') . " for country '$countryKey' would have been inserted into database (DryRun is activated)</p>";
         }
     }
 

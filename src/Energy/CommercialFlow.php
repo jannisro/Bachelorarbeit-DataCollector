@@ -7,14 +7,11 @@ use DataCollector\EnergyAdapter;
 class CommercialFlow extends EnergyAdapter
 {
 
-    private bool $dryRun;
-
     /**
      * Requests and stores commercial flows of all border relations
      */
-    public function __invoke(\DateTimeImmutable $date, bool $dryRun = false): void
+    public function __invoke(\DateTimeImmutable $date): void
     {
-        $this->dryRun = $dryRun;
         foreach (parent::BORDER_RELATIONS as $country => $neighbors) {
             $this->storeDataOfCountry($country, $neighbors, $date);
         }
@@ -46,8 +43,7 @@ class CommercialFlow extends EnergyAdapter
 
     private function storeResultInDatabase(\SimpleXMLElement $response, array $countries, \DateTimeImmutable $date): void
     {
-        // When TimeSeries is present and dry run is deactivated
-        if ($response->TimeSeries && $this->dryRun === false) {
+        if ($response->TimeSeries) {
             $time = 0;
             foreach ($this->xmlTimeSeriesToHourlyValues($response, 'quantity') as $hourlyValue) {
                 $dt = $date->format('Y-m-d') . " $time:00:00";
@@ -59,9 +55,6 @@ class CommercialFlow extends EnergyAdapter
                 );
                 ++$time;
             }
-        }
-        elseif ($this->dryRun === true) {
-            echo "<p>Commercial flow data from " . $date->format('Y-m-d') . " for border '{$countries[0]}->{$countries[1]}' would have been inserted into database (DryRun is activated)</p>";
         }
     }
 

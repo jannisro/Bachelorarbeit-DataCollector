@@ -7,14 +7,11 @@ use DataCollector\EnergyAdapter;
 class ElectricityPrice extends EnergyAdapter
 {
 
-    private bool $dryRun;
-
     /**
      * Requests and stores elctricity prices of all countries (of the first bidding zone in mapping)
      */
-    public function __invoke(\DateTimeImmutable $date, bool $dryRun = false): void
+    public function __invoke(\DateTimeImmutable $date): void
     {
-        $this->dryRun = $dryRun;
         foreach ($this->getBiddingZones($date) as $countryKey => $biddingZones) {
             // Fetch data of date
             $response = $this->makeGetRequest([
@@ -33,8 +30,7 @@ class ElectricityPrice extends EnergyAdapter
 
     private function storeResultInDatabase(\SimpleXMLElement $response, string $countryKey, \DateTimeImmutable $date): void
     {
-        // When TimeSeries is present and dry run is deactivated
-        if ($response->TimeSeries && $this->dryRun === false) {
+        if ($response->TimeSeries) {
             // Iterate through hourly values and insert them into DB
             $time = 0;
             foreach ($this->xmlTimeSeriesToHourlyValues($response, 'price.amount') as $hourlyValue) {
@@ -48,9 +44,6 @@ class ElectricityPrice extends EnergyAdapter
                 );
                 ++$time;
             }
-        }
-        elseif ($this->dryRun === true) {
-            echo "<p>Electricity price data from " . $date->format('Y-m-d') . " for country '$countryKey' would have been inserted into database (DryRun is activated)</p>";
         }
     }
 

@@ -7,8 +7,6 @@ use DataCollector\DatabaseAdapter;
 class Forecast extends \DataCollector\WeatherAdapter
 {
 
-    private bool $dryRun;
-
 
     public static function flushForecastData(): void
     {
@@ -24,9 +22,8 @@ class Forecast extends \DataCollector\WeatherAdapter
      * Fetches all weather data from the OpenWeatherMap One Call API
      * 
      */
-    public function __invoke(int|null $stationLimit = null, int|null $stationOffset = null, bool $dryRun = false): void
+    public function __invoke(int|null $stationLimit = null, int|null $stationOffset = null): void
     {
-        $this->dryRun = $dryRun;
         foreach ($this->getAllStations($stationLimit, $stationOffset) as $station) {
             echo $this->stationData($station) 
                 ? "<p style=\"color: #4CAF50\">Successfully retrieved station #{$station['id']} ({$station['country']})</p>" 
@@ -48,26 +45,15 @@ class Forecast extends \DataCollector\WeatherAdapter
     private function processAndStoreResponse(object|null $res, array $station): bool
     {
         if ($res && property_exists($res, 'hourly') && property_exists($res, 'current')) {
-            return $this->storeData($res, $station);
+            $this->storeDaylightHours($res->current, $station);
+            $this->storeHourlyData($res->hourly, $station);
+            return true;
         }
         else {
             echo '<p style="color: #F44336">Invalid response received</p>';
             var_dump($res);
             return false;
         }
-    }
-
-
-    private function storeData(object $res, array $station): bool
-    {
-        if ($this->dryRun === false) {
-            $this->storeDaylightHours($res->current, $station);
-            $this->storeHourlyData($res->hourly, $station);
-        }
-        else {
-            echo "<p>Would have inserted weather for station #{$station['id']} (dry run enabled)</p>";
-        }
-        return true;
     }
 
 

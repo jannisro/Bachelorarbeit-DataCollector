@@ -7,16 +7,12 @@ use DataCollector\EnergyAdapter;
 class InstalledCapacity extends EnergyAdapter
 {
 
-    private bool $dryRun;
-
     /**
      * Requests and stores installed capacites of all countries, identified by PSR type
      * @param \DateTimeImmutable $date Date of the year for which data should be queried
-     * @param bool $dryRun true=No data is stored and method is run for test purposes
      */
-    public function __invoke(\DateTimeImmutable $date, bool $dryRun = false): void
+    public function __invoke(\DateTimeImmutable $date): void
     {
-        $this->dryRun = $dryRun;
         foreach (parent::COUNTRIES as $countryKey => $country) {
             $response = $this->makeGetRequest([
                 'documentType' => 'A68',
@@ -34,8 +30,7 @@ class InstalledCapacity extends EnergyAdapter
 
     private function storeResultInDatabase(\SimpleXMLElement $response, string $countryKey, \DateTimeImmutable $date): void
     {
-        // When TimeSeries is present and dry run is deactivated
-        if ($response->TimeSeries && $this->dryRun === false) {
+        if ($response->TimeSeries) {
             // Add all PSR capacity values to the database
             foreach ($this->getAllPsrValues($response) as $psrType => $capacityAmount) {
                 $this->insertIntoDb('electricity_installed_capacities', [
@@ -46,9 +41,6 @@ class InstalledCapacity extends EnergyAdapter
                     'created_at' => date('Y-m-d H:i:s')
                 ]);
             }
-        }
-        elseif ($this->dryRun === true) {
-            echo "<p>Capacity data from " . $date->format('Y-m-d') . " for country '$countryKey' would have been inserted into database (DryRun is activated)</p>";
         }
     }
 

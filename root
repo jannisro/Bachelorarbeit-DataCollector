@@ -39,4 +39,4 @@
 
 
 # Hourly data fetch
-@hourly /usr/bin/php /usr/share/nginx/html/auto/energy/hourly.php > /home/cronlog/`date +\%Y-\%m-\%d-\%H:\%M`-cron.log 2>&1 ; mailx -s "Hourly run successfully" jannis.rohden@yahoo.de
+0 * * * * /usr/bin/php /usr/share/nginx/html/auto/energy/hourly.php > /home/cronlog/`date +\%Y-\%m-\%d-\%H:\%M`-cron.log 2>&1 ; mailx -s "Hourly run successfully" jannis.rohden@yahoo.de

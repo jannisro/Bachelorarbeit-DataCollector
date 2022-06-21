@@ -7,16 +7,12 @@ use DataCollector\EnergyAdapter;
 class NetTransferCapacity extends EnergyAdapter
 {
 
-    private bool $dryRun;
-
     /**
      * Requests and stores commercial flows of all border relations
      * @param \DateTimeImmutable $date Date for which data should be queried
-     * @param bool $dryRun true=No data is stored and method is run for test purposes
      */
-    public function __invoke(\DateTimeImmutable $date, bool $dryRun = false): void
+    public function __invoke(\DateTimeImmutable $date): void
     {
-        $this->dryRun = $dryRun;
         foreach (parent::BORDER_RELATIONS as $country1 => $neighbors) {
             $this->storeCountryData($country1, $neighbors, $date);
         }
@@ -83,7 +79,7 @@ class NetTransferCapacity extends EnergyAdapter
             'periodStart' => \DateTime::createFromImmutable($date)->modify('-1 day')->format('Ymd2200'),
             'periodEnd' => $date->format('Ymd2200')
         ]);
-        if (!is_null($response) && $response->TimeSeries && $this->dryRun === false) {
+        if (!is_null($response) && $response->TimeSeries) {
             return $this->xmlTimeSeriesToHourlyValues($response, 'quantity');
         }
         return array_fill(0, 24, 0);
@@ -95,8 +91,7 @@ class NetTransferCapacity extends EnergyAdapter
      */
     private function storeBorderRelationData(array $hourlyValues, array $countries, \DateTimeImmutable $date): void
     {
-        // When TimeSeries is present and dry run is deactivated
-        if (array_sum($hourlyValues) > 0 && $this->dryRun === false) {
+        if (array_sum($hourlyValues) > 0) {
             $time = 0;
             foreach ($hourlyValues as $hourlyValue) {
                 $dt = $date->format('Y-m-d') . " $time:00:00";
@@ -109,9 +104,6 @@ class NetTransferCapacity extends EnergyAdapter
                 );
                 ++$time;
             }
-        }
-        elseif ($this->dryRun === true) {
-            echo "<p>NTC data from " . $date->format('Y-m-d') . " for border '{$countries[0]}->{$countries[1]}' would have been inserted into database (DryRun is activated)</p>";
         }
     }
 
