@@ -50,7 +50,8 @@ class Generation extends EnergyAdapter
                 $this->runDbMultiQuery(
                     "INSERT INTO `electricity_generation` 
                     (`id`, `datetime`, `country`, `psr_type`, `value`, `created_at`)
-                    VALUES ('', '$dt', '$countryKey', '$psrCode', '$hourlyValue', '$created')"
+                    VALUES ('', '$dt', '$countryKey', '$psrCode', '$hourlyValue', '$created')
+                    ON DUPLICATE KEY UPDATE `value`='{$hourlyValue}'"
                 );
                 ++$time;
             }

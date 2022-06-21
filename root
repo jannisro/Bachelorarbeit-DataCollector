@@ -26,17 +26,17 @@
 # m h  dom mon dow   command
 
 ## Place file at /var/spool/cron/crontabs
-# First energy job to fetch daily values at 01:45
-45 01 * * * /usr/bin/php /usr/share/nginx/html/auto/energy/daily1.php > /home/cronlog/`date +\%Y-\%m-\%d-\%H:\%M`-cron.log 2>&1 ; mailx -s "Energy1 run successfully" jannis.rohden@yahoo.de
+# First energy job to fetch daily values at 01:40
+40 01 * * * /usr/bin/php /usr/share/nginx/html/auto/energy/daily1.php > /home/cronlog/`date +\%Y-\%m-\%d-\%H:\%M`-cron.log 2>&1 ; mailx -s "Energy1 run successfully" jannis.rohden@yahoo.de
 # Second energy job to fetch daily values at 02:10
 10 02 * * * /usr/bin/php /usr/share/nginx/html/auto/energy/daily2.php > /home/cronlog/`date +\%Y-\%m-\%d-\%H:\%M`-cron.log 2>&1 ; mailx -s "Energy2 run successfully" jannis.rohden@yahoo.de
 # Weather job to fetch daily values at 02:30
 30 02 * * * /usr/bin/php /usr/share/nginx/html/auto/weather/daily.php > /home/cronlog/`date +\%Y-\%m-\%d-\%H:\%M`-cron.log 2>&1 ; mailx -s "Weather run successfully" jannis.rohden@yahoo.de
 # Calculate mean values daily at 03:00
-00 03 * * * /usr/bin/php /usr/share/nginx/html/auto/dailyMeanValues.php > /home/cronlog/`date +\%Y-\%m-\%d-\%H:\%M`-cron.log 2>&1 ; mailx -s "Mean values run successfully" jannis.rohden@yahoo.de
-# Yearly energy job at 02:00 each January 1st
-* 02 1 01 * /usr/bin/php /usr/share/nginx/html/auto/energy/yearly.php > /home/cronlog/`date +\%Y-\%m-\%d-\%H:\%M`-cron.log 2>&1 ; mailx -s "Installed capacity run successfully" jannis.rohden@yahoo.de
+30 03 * * * /usr/bin/php /usr/share/nginx/html/auto/dailyMeanValues.php > /home/cronlog/`date +\%Y-\%m-\%d-\%H:\%M`-cron.log 2>&1 ; mailx -s "Mean values run successfully" jannis.rohden@yahoo.de
+# Yearly energy job at 04:30 each January 1st
+30 04 1 01 * /usr/bin/php /usr/share/nginx/html/auto/energy/yearly.php > /home/cronlog/`date +\%Y-\%m-\%d-\%H:\%M`-cron.log 2>&1 ; mailx -s "Installed capacity run successfully" jannis.rohden@yahoo.de
 
 
 # Hourly data fetch
-* * * * * /usr/bin/php /usr/share/nginx/html/auto/energy/hourly.php > /home/cronlog/`date +\%Y-\%m-\%d-\%H:\%M`-cron.log 2>&1 ; mailx -s "Hourly run successfully" jannis.rohden@yahoo.de
+@hourly /usr/bin/php /usr/share/nginx/html/auto/energy/hourly.php > /home/cronlog/`date +\%Y-\%m-\%d-\%H:\%M`-cron.log 2>&1 ; mailx -s "Hourly run successfully" jannis.rohden@yahoo.de
