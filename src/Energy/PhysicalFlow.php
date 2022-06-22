@@ -33,8 +33,8 @@ class PhysicalFlow extends EnergyAdapter
             'documentType' => 'A11',
             'out_Domain' => parent::COUNTRIES[$countries[0]],
             'in_Domain' => parent::COUNTRIES[$countries[1]],
-            'periodStart' => \DateTime::createFromImmutable($date)->modify('-1 day')->format('Ymd2200'),
-            'periodEnd' => $date->format('Ymd2200')
+            'periodStart' => \DateTime::createFromImmutable($date)->modify('-1 day')->format('Ymd0000'),
+            'periodEnd' => $date->format('Ymd0000')
         ]);
         if (!is_null($response)) {
             $this->storeResultInDatabase($response, $countries, $date);

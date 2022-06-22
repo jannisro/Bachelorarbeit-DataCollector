@@ -18,8 +18,8 @@ class ElectricityPrice extends EnergyAdapter
                 'documentType' => 'A44',
                 'in_Domain' => $biddingZones[0],
                 'out_Domain' => $biddingZones[0],
-                'periodStart' => \DateTime::createFromImmutable($date)->modify('-1 day')->format('Ymd2200'),
-                'periodEnd' => $date->format('Ymd2200')
+                'periodStart' => \DateTime::createFromImmutable($date)->modify('-1 day')->format('Ymd0000'),
+                'periodEnd' => $date->format('Ymd0000')
             ]);
             if (!is_null($response)) {
                 $this->storeResultInDatabase($response, $countryKey, $date);

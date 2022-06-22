@@ -18,8 +18,8 @@ class InstalledCapacity extends EnergyAdapter
                 'documentType' => 'A68',
                 'processType' => 'A33',
                 'in_domain' => $country,
-                'periodStart' => \DateTime::createFromImmutable($date)->modify('-1 year')->format('Y12312300'),
-                'periodEnd' => $date->format('Y12312300')
+                'periodStart' => \DateTime::createFromImmutable($date)->modify('-1 year')->format('Y12312000'),
+                'periodEnd' => $date->format('Y12312000')
             ]);
             if (!is_null($response)) {
                 $this->storeResultInDatabase($response, $countryKey, $date);

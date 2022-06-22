@@ -194,23 +194,43 @@ class EnergyAdapter extends DatabaseAdapter
     /**
      * Transforms XML time series to aggregated hourly array
      */
-    protected function xmlTimeSeriesToHourlyValues(\SimpleXMLElement $xml, string $dataElementName, int $timeSeriesIndex = 0): array
+    protected function xmlTimeSeriesToHourlyValues(\SimpleXMLElement $xml, string $dataElementName, int $deprecated = 0): array
     {
-        return $this->aggregateHourlyValues(
-            $this->xmlTimeSeriesPeriodsToArray($xml, $dataElementName, $timeSeriesIndex)
-        );
+        $processedData = [];
+        // Response contains more than 1 TimeSeries
+        if ($xml->TimeSeries->count() > 1) {
+            $pointInFirstSeries = $xml->TimeSeries[0]->Period->Point->count();
+            // First TimeSeries does not include whole day
+            if ($pointInFirstSeries !== 24 && $pointInFirstSeries !== 48 && $pointInFirstSeries !== 96) {
+                // Merge all TimeSeries to get complete day data
+                $timeSeriesIndex = 0;
+                while ($timeSeries = $xml->TimeSeries[$timeSeriesIndex]) {
+                    $processedData = array_merge($processedData, $this->xmlTimeSeriesPeriodsToArray($timeSeries, $dataElementName));
+                    ++$timeSeriesIndex;
+                }
+            }
+            // First TimeSeries includes whole day => Ignore second TimeSeries
+            else {
+                $processedData = $this->xmlTimeSeriesPeriodsToArray($xml->TimeSeries[0], $dataElementName);
+            }
+        }
+        // Handle only first TimeSeries
+        else {
+            $processedData = $this->xmlTimeSeriesPeriodsToArray($xml->TimeSeries[0], $dataElementName);
+        }
+        return $this->aggregateHourlyValues($processedData);
     }
 
 
     /**
      * Transforms XML time series data to array
      */
-    private function xmlTimeSeriesPeriodsToArray(\SimpleXMLElement $xml, string $dataElementName, int $timeSeriesIndex = 0): array
+    private function xmlTimeSeriesPeriodsToArray(\SimpleXMLElement $xml, string $dataElementName): array
     {
         $result = [];
         // Iiterate over Points in TimeSeries
         $pointIndex = 0;
-        while ($point = $xml->TimeSeries[$timeSeriesIndex]->Period->Point[$pointIndex]) {
+        while ($point = $xml->Period->Point[$pointIndex]) {
             $result[] = floatval($point->{$dataElementName}->__toString());
             ++$pointIndex;
         }
@@ -223,24 +243,22 @@ class EnergyAdapter extends DatabaseAdapter
      */
     private function aggregateHourlyValues(array $rawValues): array
     {
-        $result = [];
         // Raw values are hourly => No need for processing
         if (count($rawValues) === 24) {
-            $result = $rawValues;
+            return $rawValues;
         }
         // Raw values are quarter hourly => Aggregate to hourly
         else if (count($rawValues) === 96) {
-            $result = $this->aggregateValues($rawValues, 4);
+            return $this->aggregateValues($rawValues, 4);
         }
         // Raw values are half hourly => Aggregate to hourly
         else if (count($rawValues) === 48) {
-            $result = $this->aggregateValues($rawValues, 2);
+            return $this->aggregateValues($rawValues, 2);
         }
         // Incomplete dataset => Process anyway to keep existing data
-        else if (count($rawValues) < 24) {
-            $result = $this->aggregateValues($rawValues, 1);
+        else {
+            return $this->aggregateValues($rawValues, 1);
         }
-        return $result;
     }
 
 

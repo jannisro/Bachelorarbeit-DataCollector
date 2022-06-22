@@ -21,8 +21,8 @@ class Generation extends EnergyAdapter
                     'processType' => 'A16',
                     'psrType' => $psrCode,
                     'in_domain' => $country,
-                    'periodStart' => \DateTime::createFromImmutable($date)->modify('-1 day')->format('Ymd2200'),
-                    'periodEnd' => $date->format('Ymd2200')
+                    'periodStart' => \DateTime::createFromImmutable($date)->modify('-1 day')->format('Ymd0000'),
+                    'periodEnd' => $date->format('Ymd0000')
                 ]);
                 if (!is_null($response)) {
                     $this->storeResultInDatabase($psrCode, $response, $countryKey, $date);

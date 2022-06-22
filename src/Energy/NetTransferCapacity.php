@@ -76,8 +76,8 @@ class NetTransferCapacity extends EnergyAdapter
             'contract_MarketAgreement.Type' => 'A01',
             'in_Domain' => $targetBiddingZone,
             'out_Domain' => $originBiddingZone,
-            'periodStart' => \DateTime::createFromImmutable($date)->modify('-1 day')->format('Ymd2200'),
-            'periodEnd' => $date->format('Ymd2200')
+            'periodStart' => \DateTime::createFromImmutable($date)->modify('-1 day')->format('Ymd0000'),
+            'periodEnd' => $date->format('Ymd0000')
         ]);
         if (!is_null($response) && $response->TimeSeries) {
             return $this->xmlTimeSeriesToHourlyValues($response, 'quantity');

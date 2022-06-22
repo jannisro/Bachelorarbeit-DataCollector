@@ -32,8 +32,8 @@ class CommercialFlow extends EnergyAdapter
             'documentType' => 'A09',
             'out_domain' => parent::COUNTRIES[$countries[0]],
             'in_Domain' => parent::COUNTRIES[$countries[1]],
-            'periodStart' => \DateTime::createFromImmutable($date)->modify('-1 day')->format('Ymd2200'),
-            'periodEnd' => $date->format('Ymd2200')
+            'periodStart' => \DateTime::createFromImmutable($date)->modify('-1 day')->format('Ymd0000'),
+            'periodEnd' => $date->format('Ymd0000')
         ]);
         if (!is_null($response)) {
             $this->storeResultInDatabase($response, $countries, $date);

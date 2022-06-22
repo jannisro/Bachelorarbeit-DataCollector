@@ -45,8 +45,8 @@ class Forecast extends \DataCollector\WeatherAdapter
     private function processAndStoreResponse(object|null $res, array $station): bool
     {
         if ($res && property_exists($res, 'hourly') && property_exists($res, 'current')) {
-            $this->storeDaylightHours($res->current, $station);
-            $this->storeHourlyData($res->hourly, $station);
+            $this->storeDaylightHours($res->current, $station, intval($res->timezone_offset));
+            $this->storeHourlyData($res->hourly, $station, intval($res->timezone_offset));
             return true;
         }
         else {
@@ -57,12 +57,12 @@ class Forecast extends \DataCollector\WeatherAdapter
     }
 
 
-    private function storeDaylightHours(object $currentData, array $station): void
+    private function storeDaylightHours(object $currentData, array $station, int $timezoneOffset): void
     {
         $this->insertIntoDb('weather_daylight_hours_forecast', [
             'station_id' => $station['id'],
             'country' => $station['country'],
-            'date' => date('Y-m-d', intval($currentData->dt)),
+            'date' => date('Y-m-d', intval($currentData->dt) - $timezoneOffset),
             'sunrise' => date('Y-m-d H:i', intval($currentData->sunrise)),
             'sunset' => date('Y-m-d H:i', intval($currentData->sunset)),
             'created_at' => date('Y-m-d H:i:s')
@@ -70,13 +70,13 @@ class Forecast extends \DataCollector\WeatherAdapter
     }
 
 
-    private function storeHourlyData(array $hourlyData, array $station): void
+    private function storeHourlyData(array $hourlyData, array $station, int $timezoneOffset): void
     {
         foreach ($hourlyData as $item) {
             $this->insertIntoDb('weather_points_forecast', [
                 'station_id' => $station['id'],
                 'country' => $station['country'],
-                'datetime' => date('Y-m-d H:i', intval($item->dt)),
+                'datetime' => date('Y-m-d H:i', intval($item->dt) - $timezoneOffset),
                 'temperature' => floatval($item->temp),
                 'wind' => floatval($item->wind_speed),
                 'clouds' => floatval($item->clouds),

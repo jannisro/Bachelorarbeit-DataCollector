@@ -20,8 +20,8 @@ class ForecastedLoad extends EnergyAdapter
                 'documentType' => 'A65',
                 'processType' => 'A01',
                 'outBiddingZone_Domain' => $country,
-                'periodStart' => \DateTime::createFromImmutable($date)->modify('-1 day')->format('Ymd2200'),
-                'periodEnd' => $date->format('Ymd2200')
+                'periodStart' => \DateTime::createFromImmutable($date)->modify('-1 day')->format('Ymd0000'),
+                'periodEnd' => $date->format('Ymd0000')
             ]);
             if (!is_null($response)) {
                 $this->storeResultInDatabase($response, $countryKey, $date);
