@@ -31,6 +31,7 @@ class Generation extends EnergyAdapter
             }
             $this->sumGeneration($countryKey, $date);
         }
+        $this->runDbMultiQuery("DELETE FROM `electricity_generation` WHERE `datetime` LIKE '0000-00-00%'");
     }
 
 
