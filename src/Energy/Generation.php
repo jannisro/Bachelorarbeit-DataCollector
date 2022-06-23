@@ -41,16 +41,15 @@ class Generation extends EnergyAdapter
             $time = 0;
             foreach ($this->xmlTimeSeriesToHourlyValues($response, 'quantity', 0) as $hourlyValue) {
                 $dt = $date->format('Y-m-d') . " $time:00";
-                if ($dt === '0000-00-00 00:00') {
-                    continue;
-                }
                 $created = date('Y-m-d H:i:s');
-                $this->runDbMultiQuery(
-                    "INSERT INTO `electricity_generation` 
-                    (`id`, `datetime`, `country`, `psr_type`, `value`, `created_at`)
-                    VALUES ('', '$dt', '$countryKey', '$psrCode', '$hourlyValue', '$created')
-                    ON DUPLICATE KEY UPDATE `value`='{$hourlyValue}'"
-                );
+                if ($dt != '0000-00-00 00:00' && intval($hourlyValue) != 0) {
+                    $this->runDbMultiQuery(
+                        "INSERT INTO `electricity_generation` 
+                        (`id`, `datetime`, `country`, `psr_type`, `value`, `created_at`)
+                        VALUES ('', '$dt', '$countryKey', '$psrCode', '$hourlyValue', '$created')
+                        ON DUPLICATE KEY UPDATE `value`='{$hourlyValue}'"
+                    );
+                }
                 ++$time;
             }
         }
