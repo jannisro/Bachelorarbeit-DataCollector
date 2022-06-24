@@ -194,7 +194,7 @@ class EnergyAdapter extends DatabaseAdapter
     /**
      * Transforms XML time series to aggregated hourly array
      */
-    protected function xmlTimeSeriesToHourlyValues(\SimpleXMLElement $xml, string $dataElementName, int $deprecated = 0): array
+    protected function xmlTimeSeriesToHourlyValues(\SimpleXMLElement $xml, string $dataElementName): array
     {
         $processedData = [];
         // Response contains more than 1 TimeSeries

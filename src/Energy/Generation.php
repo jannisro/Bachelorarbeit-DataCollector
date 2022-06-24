@@ -40,7 +40,7 @@ class Generation extends EnergyAdapter
         if ($response->TimeSeries) {
             // Iterate through hourly values of each PSR and insert them into DB
             $time = 0;
-            foreach ($this->xmlTimeSeriesToHourlyValues($response, 'quantity', 0) as $hourlyValue) {
+            foreach ($this->xmlTimeSeriesToHourlyValues($response, 'quantity') as $hourlyValue) {
                 $dt = $date->format('Y-m-d') . " $time:00";
                 $created = date('Y-m-d H:i:s');
                 if (!str_starts_with($dt, '0000') && intval($hourlyValue) != 0) {
